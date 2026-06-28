@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Feedback | {{ event.name }}</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3 -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --gradient-accent: linear-gradient(135deg, #6c63ff, #3b82f6);
+            --font-family: 'Inter', sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .form-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: none;
+            overflow: hidden;
+            max-width: 500px;
+            width: 100%;
+        }
+        .form-header {
+            background: var(--gradient-accent);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+        .form-body {
+            padding: 30px;
+        }
+        .star-rating {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .star-rating input { display: none; }
+        .star-rating label {
+            font-size: 32px;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .star-rating label:hover,
+        .star-rating label:hover ~ label,
+        .star-rating input:checked ~ label {
+            color: #fbbf24;
+        }
+        .emoji-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .emoji-btn {
+            font-size: 28px;
+            padding: 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .emoji-btn:hover { border-color: var(--primary); transform: scale(1.05); }
+        .emoji-btn.active {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.08);
+            transform: scale(1.1);
+        }
+        .emoji-btn input { display: none; }
+        .btn-submit {
+            background: var(--gradient-accent);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 12px;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <div class="form-header">
+            <span class="fs-1 d-block mb-2">🎉</span>
+            <h3 class="fw-bold mb-1">{{ event.name }}</h3>
+            <p class="mb-0 opacity-75">We value your feedback! Tell us how your experience was.</p>
+        </div>
+        <form action="{{ url_for('feedback.submit_feedback', event_id=event.id) }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-body">
+                <!-- Star Rating -->
+                <div class="mb-4 text-center">
+                    <label class="form-label d-block fw-semibold mb-2 text-secondary text-uppercase small">Your Rating</label>
+                    <div class="star-rating">
+                        <input type="radio" id="star5" name="rating" value="5" required><label for="star5" class="bi bi-star-fill"></label>
+                        <input type="radio" id="star4" name="rating" value="4"><label for="star4" class="bi bi-star-fill"></label>
+                        <input type="radio" id="star3" name="rating" value="3"><label for="star3" class="bi bi-star-fill"></label>
+                        <input type="radio" id="star2" name="rating" value="2"><label for="star2" class="bi bi-star-fill"></label>
+                        <input type="radio" id="star1" name="rating" value="1"><label for="star1" class="bi bi-star-fill"></label>
+                    </div>
+                </div>
+
+                <!-- Emoji Reaction -->
+                <div class="mb-4">
+                    <label class="form-label d-block text-center fw-semibold mb-2 text-secondary text-uppercase small">Your Mood</label>
+                    <div class="emoji-group">
+                        <button type="button" class="emoji-btn active" onclick="selectEmoji('😊', this)">
+                            😊
+                        </button>
+                        <button type="button" class="emoji-btn" onclick="selectEmoji('😍', this)">
+                            😍
+                        </button>
+                        <button type="button" class="emoji-btn" onclick="selectEmoji('😐', this)">
+                            😐
+                        </button>
+                        <button type="button" class="emoji-btn" onclick="selectEmoji('😞', this)">
+                            😞
+                        </button>
+                        <button type="button" class="emoji-btn" onclick="selectEmoji('😡', this)">
+                            😡
+                        </button>
+                    </div>
+                    <input type="hidden" name="emoji" id="selectedEmojiInput" value="😊">
+                </div>
+
+                <!-- Guest Name -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary text-uppercase small">Your Name (Optional)</label>
+                    <input type="text" class="form-control p-3 border-light-subtle rounded-3" name="guest_name" placeholder="Leave empty for anonymous">
+                </div>
+
+                <!-- Guest Comment -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold text-secondary text-uppercase small">Your Comments</label>
+                    <textarea class="form-control p-3 border-light-subtle rounded-3" name="comment" rows="4" placeholder="Tell us what you liked or how we can improve..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-submit btn-lg">Submit Feedback</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function selectEmoji(emoji, btn) {
+            document.querySelectorAll('.emoji-btn').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('selectedEmojiInput').value = emoji;
+        }
+    </script>
+</body>
+</html>

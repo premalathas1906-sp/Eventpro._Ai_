@@ -1,0 +1,891 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ───── DASHBOARD STYLES ───── */
+
+/* Header */
+.dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.dash-header h1 { font-size: 28px; font-weight: 800; color: var(--text-primary); margin: 0; }
+.dash-header p  { color: var(--text-secondary); font-size: 14px; margin: 4px 0 0; }
+
+/* ── Stat Cards ── */
+.stat-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+.stat-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    color: #fff;
+    flex-shrink: 0;
+}
+.stat-icon.purple  { background: linear-gradient(135deg, #6c63ff, #8b5cf6); }
+.stat-icon.blue    { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+.stat-icon.green   { background: linear-gradient(135deg, #10b981, #34d399); }
+.stat-icon.amber   { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+.stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+.stat-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+.stat-trend.up   { color: #10b981; background: rgba(16,185,129,0.1); }
+.stat-trend.down { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+/* ── Chart Cards ── */
+.chart-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 24px;
+    height: 100%;
+}
+.chart-card .chart-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+}
+
+/* ── Event Cards ── */
+.event-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 24px;
+    transition: all 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+.event-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    width: fit-content;
+}
+.event-badge.wedding   { background: rgba(236,72,153,0.12); color: #ec4899; }
+.event-badge.birthday  { background: rgba(245,158,11,0.12); color: #f59e0b; }
+.event-badge.college   { background: rgba(59,130,246,0.12); color: #3b82f6; }
+.event-badge.corporate { background: rgba(108,99,255,0.12); color: #6c63ff; }
+
+.event-card h5 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 14px;
+}
+.event-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+.event-meta i { color: var(--text-muted); font-size: 14px; width: 16px; }
+
+.event-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 14px 0 6px;
+}
+.event-progress {
+    height: 6px;
+    border-radius: 3px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+.event-progress .bar {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--gradient-accent);
+    transition: width 1s ease;
+}
+
+.event-card .manage-btn {
+    margin-top: auto;
+    padding-top: 16px;
+}
+
+/* ── Quick Actions ── */
+.action-card {
+    background: var(--card-bg);
+    border: none;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 28px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: block;
+    height: 100%;
+}
+.action-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 30px rgba(108,99,255,0.18);
+}
+.action-card .action-icon {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(108,99,255,0.1), rgba(59,130,246,0.1));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    color: var(--primary);
+    margin: 0 auto 14px;
+    transition: all 0.3s ease;
+}
+.action-card:hover .action-icon {
+    background: var(--gradient-accent);
+    color: #fff;
+}
+.action-card h6 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+.action-card p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── Section Title ── */
+.section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.section-head h5 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+.section-head a {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+.section-head a:hover { color: #3b82f6; }
+
+/* ── Create Event Modal ── */
+.modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+}
+.modal-header {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 20px 24px;
+}
+.modal-header .modal-title {
+    font-weight: 700;
+    font-size: 18px;
+}
+.modal-body { padding: 24px; }
+.modal-footer {
+    border-top: 1px solid #e2e8f0;
+    padding: 16px 24px;
+}
+.modal-body .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+.modal-body .form-control,
+.modal-body .form-select {
+    border-radius: var(--radius-input);
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
+    padding: 10px 14px;
+    transition: all 0.3s ease;
+}
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ═══════════ HEADER ═══════════ -->
+<div class="dash-header" data-aos="fade-down">
+    <div>
+        <h1>Dashboard</h1>
+        <p>Welcome back, {{ current_user.username if current_user and current_user.is_authenticated else 'User' }}! 👋</p>
+    </div>
+    <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#createEventModal">
+        <i class="bi bi-plus-lg me-2"></i>Create Event
+    </button>
+</div>
+
+<!-- ═══════════ KPI STATS ═══════════ -->
+<div class="row g-4 mb-4">
+    <!-- Total Events -->
+    <div class="col-xl-3 col-md-6" data-aos="fade-up" data-aos-delay="0">
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="bi bi-calendar-event"></i>
+            </div>
+            <div>
+                <div class="stat-value" id="kpiTotalEvents" data-counter="{{ stats.total_events|default(0) }}">0</div>
+                <div class="stat-label">Total Events</div>
+                <div class="stat-trend up">
+                    <i class="bi bi-arrow-up-short"></i>Live stats
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Total Guests -->
+    <div class="col-xl-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="bi bi-people"></i>
+            </div>
+            <div>
+                <div class="stat-value" id="kpiTotalGuests" data-counter="{{ stats.total_guests|default(0) }}">0</div>
+                <div class="stat-label">Total Guests</div>
+                <div class="stat-trend up">
+                    <i class="bi bi-arrow-up-short"></i>RSVPs
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Attendance Rate -->
+    <div class="col-xl-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-qr-code-scan"></i>
+            </div>
+            <div>
+                <div class="stat-value" id="kpiAttendanceRate" data-counter="{{ stats.attendance_rate|default(0) }}" data-suffix="%">0%</div>
+                <div class="stat-label">Attendance Rate</div>
+                <div class="stat-trend up">
+                    <i class="bi bi-arrow-up-short"></i>Checked In
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Budget Used -->
+    <div class="col-xl-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+            <div>
+                {% if stats.budget_used|default(0.0) >= 10000000 %}
+                <div class="stat-value" id="kpiBudgetUsed" data-counter="{{ stats.budget_used|default(0.0) / 10000000.0 }}" data-prefix="₹" data-suffix=" Cr" data-decimals="2">₹0 Cr</div>
+                {% elif stats.budget_used|default(0.0) >= 100000 %}
+                <div class="stat-value" id="kpiBudgetUsed" data-counter="{{ stats.budget_used|default(0.0) / 100000.0 }}" data-prefix="₹" data-suffix=" L" data-decimals="2">₹0 L</div>
+                {% else %}
+                <div class="stat-value" id="kpiBudgetUsed" data-counter="{{ stats.budget_used|default(0.0) }}" data-prefix="₹" data-decimals="0">₹0</div>
+                {% endif %}
+                <div class="stat-label">Budget Spent</div>
+                <div class="stat-trend up">
+                    <i class="bi bi-arrow-up-short"></i>Allocated
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ CHARTS ═══════════ -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8" data-aos="fade-up" data-aos-delay="100">
+        <div class="chart-card">
+            <div class="chart-title">Event Registrations</div>
+            <canvas id="registrationChart" height="110"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+        <div class="chart-card">
+            <div class="chart-title">Event Types</div>
+            <canvas id="eventTypesChart" height="220"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ UPCOMING EVENTS ═══════════ -->
+<div class="section-head" data-aos="fade-up">
+    <h5>Upcoming Events</h5>
+    <a href="{{ url_for('events.events_list') }}">View All <i class="bi bi-arrow-right"></i></a>
+</div>
+<div class="row g-4 mb-4" id="upcomingEventsGrid">
+    {% for event in upcoming_events %}
+    <div class="col-lg-4 col-md-6 event-col-card" data-event-id="{{ event.id }}" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}">
+        <div class="event-card">
+            <span class="event-badge {{ event.type|lower|replace(' ', '-')|replace('college-event','college') }}">{{ event.type }}</span>
+            <h5>{{ event.name }}</h5>
+            <div class="event-meta">
+                <i class="bi bi-calendar3"></i>
+                <span>{{ event.date }} · {{ event.time }}</span>
+            </div>
+            <div class="event-meta">
+                <i class="bi bi-geo-alt"></i>
+                <span>{{ event.venue }}</span>
+            </div>
+            <div class="event-meta">
+                <i class="bi bi-people"></i>
+                <span>{{ event.guests_confirmed }} / {{ event.guests_total }} guests</span>
+            </div>
+            <div class="event-progress-label">
+                <span>Tasks completed</span>
+                <span>{{ event.progress }}%</span>
+            </div>
+            <div class="event-progress">
+                <div class="bar" style="width: {{ event.progress }}%;"></div>
+            </div>
+            <div class="manage-btn">
+                <a href="{{ url_for('events.event_detail', id=event.id) }}" class="btn btn-sm btn-gradient w-100">
+                    <i class="bi bi-gear me-1"></i>Manage
+                </a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12" id="noEventsCard" data-aos="fade-up">
+        <div class="card text-center p-5 border-0 shadow-sm" style="border-radius:16px;">
+            <div class="text-muted mb-3" style="font-size:3rem;"><i class="bi bi-calendar-x"></i></div>
+            <h5 class="fw-bold">No Upcoming Events</h5>
+            <p class="text-secondary small mb-3">You don't have any upcoming events scheduled. Create one to get started!</p>
+            <button class="btn btn-gradient btn-sm px-4 mx-auto" data-bs-toggle="modal" data-bs-target="#createEventModal">
+                <i class="bi bi-plus-lg me-1"></i>Create Event
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ═══════════ QUICK ACTIONS ═══════════ -->
+<div class="section-head" data-aos="fade-up">
+    <h5>Quick Actions</h5>
+</div>
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="0">
+        <a href="{{ url_for('guests.guest_list_all') }}" class="action-card">
+            <div class="action-icon"><i class="bi bi-person-plus"></i></div>
+            <h6>Add Guests</h6>
+            <p>Import or manually add guests to your event lists</p>
+        </a>
+    </div>
+    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+        <a href="{{ url_for('invitations.invitation_page') }}" class="action-card">
+            <div class="action-icon"><i class="bi bi-envelope-paper"></i></div>
+            <h6>Generate Invitation</h6>
+            <p>Create beautiful AI-powered invitations in seconds</p>
+        </a>
+    </div>
+    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+        <a href="{{ url_for('analytics.analytics_page') }}" class="action-card">
+            <div class="action-icon"><i class="bi bi-bar-chart-line"></i></div>
+            <h6>View Analytics</h6>
+            <p>Track RSVPs, attendance rates, and event insights</p>
+        </a>
+    </div>
+    <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+        <a href="{{ url_for('chatbot.chat') }}" class="action-card">
+            <div class="action-icon"><i class="bi bi-robot"></i></div>
+            <h6>AI Assistant</h6>
+            <p>Get smart suggestions for planning your next event</p>
+        </a>
+    </div>
+</div>
+
+<!-- ═══════════ CREATE EVENT MODAL ═══════════ -->
+<div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createEventModalLabel">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Create New Event
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('events.create_event') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Event Name -->
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-pencil me-1"></i>Event Name</label>
+                            <input type="text" name="event_name" class="form-control" placeholder="e.g. Annual Gala 2026" required>
+                        </div>
+                        <!-- Event Type -->
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-tags me-1"></i>Event Type</label>
+                            <select name="event_type" class="form-select" required id="event_type">
+                                <option value="" disabled selected>Select type…</option>
+                                <option value="Wedding">Wedding</option>
+                                <option value="Birthday">Birthday</option>
+                                <option value="College Event">College Event</option>
+                                <option value="Corporate">Corporate</option>
+                                <option value="Conference">Conference</option>
+                                <option value="Party">Party</option>
+                            </select>
+                        </div>
+                        <!-- Date -->
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-calendar3 me-1"></i>Date</label>
+                            <input type="date" name="event_date" class="form-control" required>
+                        </div>
+                        <!-- Time -->
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-clock me-1"></i>Time</label>
+                            <div class="input-group">
+                                <input type="number" id="eventHour" class="form-control text-center" min="1" max="12" placeholder="HH" required>
+                                <span class="input-group-text">:</span>
+                                <input type="number" id="eventMinute" class="form-control text-center" min="0" max="59" placeholder="MM" required>
+                                <select id="eventAmpm" class="form-select" required style="max-width: 80px;">
+                                    <option value="AM">AM</option>
+                                    <option value="PM" selected>PM</option>
+                                </select>
+                            </div>
+                            <input type="hidden" name="event_time" id="eventTime">
+                        </div>
+                        <!-- Venue Type -->
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-building me-1"></i>Venue Type</label>
+                            <select id="eventVenueType" class="form-select" required>
+                                <option value="Indoor" selected>Indoor</option>
+                                <option value="Outdoor">Outdoor</option>
+                                <option value="Banquet Hall">Banquet Hall</option>
+                                <option value="Beach">Beach</option>
+                                <option value="Garden">Garden</option>
+                            </select>
+                        </div>
+                        <!-- Venue Name -->
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-house-door me-1"></i>Venue Name</label>
+                            <input type="text" name="venue" class="form-control" placeholder="Venue name" required>
+                        </div>
+                        <!-- Location -->
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-geo-alt me-1"></i>Location (City)</label>
+                            <input type="text" id="eventLocation" class="form-control" placeholder="e.g. Mumbai, Goa" required>
+                        </div>
+                        <!-- Expected Guests -->
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-people me-1"></i>Expected Guests</label>
+                            <input type="number" name="expected_guests" class="form-control" min="1" placeholder="e.g. 150" required>
+                        </div>
+                        
+                        <!-- AI Budget Prediction Card -->
+                        <div class="col-12 mt-3" id="aiBudgetCard" style="display: none;">
+                            <div class="card border-0 p-3" style="background: rgba(108, 99, 255, 0.08); border-radius: 12px; border: 1px solid rgba(108, 99, 255, 0.15) !important;">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="badge bg-primary text-white py-1 px-2" style="font-size: 11px;">
+                                        <i class="bi bi-robot me-1"></i> AI Suggested Budget
+                                    </span>
+                                    <div class="text-muted" style="cursor: pointer; font-size: 12px;" data-bs-toggle="tooltip" data-bs-placement="top" id="aiExplanationTooltip" title="Calculated based on event type base cost, venue type modifier, and location premium.">
+                                        <i class="bi bi-info-circle-fill"></i> How is this calculated?
+                                    </div>
+                                </div>
+                                <div class="row align-items-center">
+                                    <div class="col-md-7">
+                                        <div class="text-secondary small text-uppercase fw-semibold" style="font-size: 11px;">Estimated Budget Range</div>
+                                        <div class="h4 fw-extrabold text-primary mb-1" id="aiBudgetRange" style="font-weight: 800;">₹0 - ₹0</div>
+                                        <div class="text-secondary small">Suggested Budget: <strong class="text-dark" id="aiSuggestedBudget">₹0</strong></div>
+                                    </div>
+                                    <div class="col-md-5 text-md-end mt-2 mt-md-0">
+                                        <span class="badge rounded-pill text-uppercase py-2 px-3 fw-bold" id="budgetTierBadge" style="font-size: 11px; background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                                            Medium Budget
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Warning Area -->
+                                <div class="mt-2 text-danger small fw-semibold" id="venueWarning" style="display: none;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> Warning: Guest count exceeds recommended capacity for this venue type.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Budget Field (Auto filled by AI suggestion, but overrideable) -->
+                        <div class="col-md-12">
+                            <label class="form-label"><i class="bi bi-currency-rupee me-1"></i>Event Budget (₹)</label>
+                            <input type="number" name="budget" class="form-control" min="0" step="500" placeholder="AI Suggested amount will pre-fill..." required>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="col-12">
+                            <label class="form-label"><i class="bi bi-chat-left-text me-1"></i>Description</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Brief description of your event…"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius:var(--radius-input);">Cancel</button>
+                    <button type="submit" class="btn btn-gradient">
+                        <i class="bi bi-check-lg me-1"></i>Create Event
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── CREATE EVENT AI BUDGET & TIME CALCULATIONS ──
+    const modalEl = document.getElementById('createEventModal');
+    if (modalEl) {
+        const hourInput = modalEl.querySelector('#eventHour');
+        const minuteInput = modalEl.querySelector('#eventMinute');
+        const ampmInput = modalEl.querySelector('#eventAmpm');
+        const timeInput = modalEl.querySelector('#eventTime');
+
+        function updateTime() {
+            const h = parseInt(hourInput.value) || 12;
+            const m = parseInt(minuteInput.value) || 0;
+            const ampm = ampmInput.value;
+            let h24 = h;
+            if (ampm === 'PM' && h < 12) h24 = h + 12;
+            else if (ampm === 'AM' && h === 12) h24 = 0;
+            timeInput.value = `${String(h24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+
+        hourInput.addEventListener('input', updateTime);
+        minuteInput.addEventListener('input', updateTime);
+        ampmInput.addEventListener('change', updateTime);
+
+        // Budget Prediction Listeners
+        const typeSelect = modalEl.querySelector('[name="event_type"]');
+        const guestsInput = modalEl.querySelector('[name="expected_guests"]');
+        const venueTypeSelect = modalEl.querySelector('#eventVenueType');
+        const locationInput = modalEl.querySelector('#eventLocation');
+
+        function calculateAIBudget() {
+            const eventType = typeSelect.value;
+            const guests = parseInt(guestsInput.value) || 0;
+            const venueType = venueTypeSelect.value;
+            const location = locationInput.value;
+
+            if (!eventType || guests <= 0) {
+                modalEl.querySelector('#aiBudgetCard').style.display = 'none';
+                return;
+            }
+
+            let minRate = 500;
+            let maxRate = 1500;
+            switch(eventType.toLowerCase()) {
+                case 'wedding': minRate = 1500; maxRate = 3000; break;
+                case 'birthday': minRate = 500; maxRate = 1500; break;
+                case 'corporate': minRate = 800; maxRate = 2000; break;
+                case 'conference': minRate = 600; maxRate = 1800; break;
+                case 'party': minRate = 400; maxRate = 1200; break;
+                default: minRate = 600; maxRate = 1500; break;
+            }
+
+            let minB = minRate * guests;
+            let maxB = maxRate * guests;
+
+            let venueMult = 1.0;
+            if (['outdoor', 'beach', 'garden'].includes(venueType.toLowerCase())) {
+                venueMult = 1.20;
+            }
+            minB *= venueMult;
+            maxB *= venueMult;
+
+            let locMult = 1.0;
+            if (location && location.trim().length > 0) {
+                const premiumKeywords = ['mumbai', 'delhi', 'bangalore', 'goa', 'luxury', 'hotel', 'premium'];
+                const isPremium = premiumKeywords.some(kw => location.toLowerCase().includes(kw));
+                if (isPremium) locMult = 1.15;
+            }
+            minB *= locMult;
+            maxB *= locMult;
+
+            const suggested = (minB + maxB) / 2;
+
+            modalEl.querySelector('#aiBudgetRange').textContent = `₹${Math.round(minB).toLocaleString('en-IN')} - ₹${Math.round(maxB).toLocaleString('en-IN')}`;
+            modalEl.querySelector('#aiSuggestedBudget').textContent = `₹${Math.round(suggested).toLocaleString('en-IN')}`;
+            modalEl.querySelector('[name="budget"]').value = Math.round(suggested);
+
+            const tierBadge = modalEl.querySelector('#budgetTierBadge');
+            if (suggested < 100000) {
+                tierBadge.textContent = 'Low Budget';
+                tierBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                tierBadge.style.color = '#10b981';
+            } else if (suggested < 500000) {
+                tierBadge.textContent = 'Medium Budget';
+                tierBadge.style.background = 'rgba(59, 130, 246, 0.15)';
+                tierBadge.style.color = '#3b82f6';
+            } else {
+                tierBadge.textContent = 'High Budget';
+                tierBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                tierBadge.style.color = '#ef4444';
+            }
+
+            const tooltipEl = modalEl.querySelector('#aiExplanationTooltip');
+            const tooltipText = `Base rate: ₹${minRate}-₹${maxRate}/guest. Venue: ${venueMult > 1.0 ? '+20%' : '0%'}. Location: ${locMult > 1.0 ? '+15%' : '0%'}.`;
+            tooltipEl.setAttribute('title', tooltipText);
+
+            const tooltipInstance = bootstrap.Tooltip.getInstance(tooltipEl);
+            if (tooltipInstance) tooltipInstance.dispose();
+            new bootstrap.Tooltip(tooltipEl);
+
+            const warningEl = modalEl.querySelector('#venueWarning');
+            let exceeds = false;
+            if (['indoor', 'banquet hall'].includes(venueType.toLowerCase()) && guests > 300) exceeds = true;
+            else if (['outdoor', 'beach', 'garden'].includes(venueType.toLowerCase()) && guests > 500) exceeds = true;
+            warningEl.style.display = exceeds ? 'block' : 'none';
+
+            modalEl.querySelector('#aiBudgetCard').style.display = 'block';
+        }
+
+        typeSelect.addEventListener('change', calculateAIBudget);
+        guestsInput.addEventListener('input', calculateAIBudget);
+        venueTypeSelect.addEventListener('change', calculateAIBudget);
+        locationInput.addEventListener('input', calculateAIBudget);
+        
+        // Initialize tooltips
+        new bootstrap.Tooltip(modalEl.querySelector('#aiExplanationTooltip'));
+    }
+
+    // ── COUNTER ANIMATION ──
+    document.querySelectorAll('[data-counter]').forEach(el => {
+        const target   = parseFloat(el.dataset.counter);
+        const prefix   = el.dataset.prefix || '';
+        const suffix   = el.dataset.suffix || '';
+        const decimals = parseInt(el.dataset.decimals) || 0;
+        const duration = 1600;
+        const start    = performance.now();
+
+        function ease(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+
+        function tick(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const value = target * ease(progress);
+            el.textContent = prefix + value.toFixed(decimals) + suffix;
+            if (progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    });
+
+    // ── REGISTRATION LINE CHART ──
+    const regCtx = document.getElementById('registrationChart');
+    if (regCtx) {
+        const regGradient = regCtx.getContext('2d').createLinearGradient(0, 0, 0, 340);
+        regGradient.addColorStop(0, 'rgba(108, 99, 255, 0.25)');
+        regGradient.addColorStop(1, 'rgba(108, 99, 255, 0.01)');
+
+        new Chart(regCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Registrations',
+                    data: [120, 190, 170, 280, 320, 410, 380, 460, 520, 490, 580, 640],
+                    borderColor: '#6c63ff',
+                    backgroundColor: regGradient,
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#6c63ff',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleFont: { family: 'Inter', weight: '600' },
+                        bodyFont: { family: 'Inter' },
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Inter', size: 12 }, color: '#94a3b8' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.04)', drawBorder: false },
+                        ticks: { font: { family: 'Inter', size: 12 }, color: '#94a3b8' },
+                        beginAtZero: true
+                    }
+                },
+                interaction: { intersect: false, mode: 'index' }
+            }
+        });
+    }
+
+    // ── EVENT TYPES DOUGHNUT CHART ──
+    const typeCtx = document.getElementById('eventTypesChart');
+    if (typeCtx) {
+        new Chart(typeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Wedding', 'Birthday', 'College', 'Corporate'],
+                datasets: [{
+                    data: {{ stats.event_types|tojson if stats.event_types else [0,0,0,0] }},
+                    backgroundColor: ['#ec4899', '#f59e0b', '#3b82f6', '#6c63ff'],
+                    borderWidth: 0,
+                    hoverOffset: 8,
+                    borderRadius: 4,
+                    spacing: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '68%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { family: 'Inter', size: 12 },
+                            color: '#64748b',
+                            padding: 16,
+                            usePointStyle: true,
+                            pointStyleWidth: 10
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleFont: { family: 'Inter', weight: '600' },
+                        bodyFont: { family: 'Inter' },
+                        padding: 12,
+                        cornerRadius: 8
+                    }
+                }
+            }
+        });
+    }
+
+    // ── Socket.IO Real-time updates ──
+    if (window.socket) {
+        window.socket.on('event_created', (event) => {
+            showToast(`Event "${event.name}" created successfully!`, 'success');
+
+            const noEventsCard = document.getElementById('noEventsCard');
+            if (noEventsCard) {
+                noEventsCard.remove();
+            }
+
+            const badgeClass = event.type.toLowerCase().replace(/ /g, '-').replace('college-event', 'college');
+            const detailUrl = `/events/${event.id}`;
+            const cardHtml = `
+                <div class="col-lg-4 col-md-6 event-col-card" data-event-id="${event.id}">
+                    <div class="event-card">
+                        <span class="event-badge ${badgeClass}">${event.type}</span>
+                        <h5>${event.name}</h5>
+                        <div class="event-meta">
+                            <i class="bi bi-calendar3"></i>
+                            <span>${event.date} · ${event.time}</span>
+                        </div>
+                        <div class="event-meta">
+                            <i class="bi bi-geo-alt"></i>
+                            <span>${event.venue}</span>
+                        </div>
+                        <div class="event-meta">
+                            <i class="bi bi-people"></i>
+                            <span>0 / ${event.max_guests} guests</span>
+                        </div>
+                        <div class="event-progress-label">
+                            <span>Tasks completed</span>
+                            <span>${event.progress}%</span>
+                        </div>
+                        <div class="event-progress">
+                            <div class="bar" style="width: ${event.progress}%;"></div>
+                        </div>
+                        <div class="manage-btn">
+                            <a href="${detailUrl}" class="btn btn-sm btn-gradient w-100">
+                                <i class="bi bi-gear me-1"></i>Manage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const grid = document.getElementById('upcomingEventsGrid');
+            if (grid) {
+                grid.insertAdjacentHTML('afterbegin', cardHtml);
+            }
+
+            // Animate / Increment KPI Total Events
+            const kpiTotalEvents = document.getElementById('kpiTotalEvents');
+            if (kpiTotalEvents) {
+                const currentCount = parseInt(kpiTotalEvents.dataset.counter || '0') + 1;
+                kpiTotalEvents.dataset.counter = currentCount;
+                kpiTotalEvents.textContent = currentCount;
+            }
+        });
+    }
+
+});
+</script>
+{% endblock %}

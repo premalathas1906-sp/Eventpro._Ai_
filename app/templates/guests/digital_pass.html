@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Event Pass | {{ guest.name }}</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3 -->
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --gradient-accent: linear-gradient(135deg, #6c63ff, #3b82f6);
+            --font-family: 'Inter', sans-serif;
+            --ticket-family: 'Outfit', sans-serif;
+        }
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, #0f1023 0%, #1d1e42 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #ffffff;
+        }
+        .ticket-wrapper {
+            max-width: 400px;
+            width: 100%;
+            perspective: 1000px;
+        }
+        .ticket-card {
+            background: #1a1b3a;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+        .ticket-header {
+            background: var(--gradient-accent);
+            padding: 30px 24px;
+            text-align: center;
+            position: relative;
+        }
+        .ticket-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0; right: 0;
+            height: 20px;
+            background-image: radial-gradient(circle, #1a1b3a 8px, transparent 9px);
+            background-size: 24px 20px;
+        }
+        .ticket-body {
+            padding: 35px 24px 24px;
+            text-align: center;
+        }
+        .ticket-event-title {
+            font-family: var(--ticket-family);
+            font-weight: 800;
+            font-size: 24px;
+            letter-spacing: -0.5px;
+            margin-bottom: 5px;
+        }
+        .ticket-qr {
+            width: 180px;
+            height: 180px;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 16px;
+            margin: 24px auto;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ticket-qr img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .ticket-divider {
+            height: 1px;
+            border-top: 2px dashed rgba(255,255,255,0.1);
+            margin: 20px 0;
+            position: relative;
+        }
+        .ticket-divider::before, .ticket-divider::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            width: 20px;
+            height: 20px;
+            background: #0f1023;
+            border-radius: 50%;
+        }
+        .ticket-divider::before { left: -35px; }
+        .ticket-divider::after { right: -35px; }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--ticket-family);
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 30px;
+        }
+        .status-checked-in {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .status-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        .btn-check-in {
+            background: var(--gradient-accent);
+            border: none;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .btn-check-in:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="ticket-wrapper">
+        <div class="ticket-card">
+            <div class="ticket-header">
+                <span class="fs-6 text-uppercase fw-semibold tracking-wider opacity-75">Event Admission Pass</span>
+                <h4 class="fw-bold mt-1 mb-0">{{ event.event_type }}</h4>
+            </div>
+            
+            <div class="ticket-body">
+                <div class="ticket-event-title">{{ event.name }}</div>
+                <div class="text-secondary small"><i class="bi bi-geo-alt"></i> {{ event.venue or 'TBD' }}</div>
+                <div class="text-secondary small"><i class="bi bi-calendar3"></i> {{ event.date.strftime('%B %d, %Y') }}</div>
+                
+                <div class="ticket-divider"></div>
+                
+                <h5 class="fw-bold mb-1">{{ guest.name }}</h5>
+                <p class="text-secondary small mb-0">{{ guest.email or 'No email provided' }}</p>
+                
+                <!-- QR Code representation -->
+                <div class="ticket-qr">
+                    <img src="{{ url_for('guests.generate_qr_code', token=guest.qr_token) }}" alt="Admission QR Code">
+                </div>
+                
+                <!-- Check-in Status -->
+                <div id="checkinStatusContainer">
+                    {% if guest.checked_in %}
+                    <div class="status-badge status-checked-in">
+                        <i class="bi bi-check-circle-fill"></i> Admitted / Checked In
+                    </div>
+                    <p class="small text-secondary mt-2 mb-0">Check-in Time: {{ guest.check_in_time.strftime('%H:%M:%S') }}</p>
+                    {% else %}
+                    <div class="status-badge status-pending">
+                        <i class="bi bi-clock-history"></i> Pending Check-In
+                    </div>
+                    <button class="btn btn-check-in" id="checkInBtn">
+                        <i class="bi bi-qr-code-scan"></i> Perform Check-In
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('checkInBtn');
+        if (btn) {
+            btn.addEventListener('click', () => {
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Checking in...';
+                btn.disabled = true;
+                
+                fetch("{{ url_for('guests.checkin_guest', token=guest.qr_token) }}?api=true", {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const container = document.getElementById('checkinStatusContainer');
+                        container.innerHTML = `
+                            <div class="status-badge status-checked-in">
+                                <i class="bi bi-check-circle-fill"></i> Admitted / Checked In
+                            </div>
+                            <p class="small text-secondary mt-2 mb-0">Check-in Time: ${data.guest.check_in_time}</p>
+                        `;
+                    } else {
+                        alert('Check-in failed: ' + data.message);
+                        btn.innerHTML = '<i class="bi bi-qr-code-scan"></i> Perform Check-In';
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Error checking in guest.');
+                    btn.innerHTML = '<i class="bi bi-qr-code-scan"></i> Perform Check-In';
+                    btn.disabled = false;
+                });
+            });
+        }
+    </script>
+</body>
+</html>

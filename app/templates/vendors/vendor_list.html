@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Vendor Management{% endblock %}
+{% block nav_vendors %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .vendor-grid { margin-top: 24px; }
+    .vendor-card {
+        border-radius: 14px; border: 1px solid #e2e8f0;
+        transition: var(--transition-fast); background: #fff; overflow: hidden;
+    }
+    .vendor-card:hover { transform: translateY(-4px); box-shadow: var(--card-hover-shadow); }
+    .vendor-card-header {
+        padding: 20px 20px 10px; display: flex; justify-content: space-between; align-items: start;
+    }
+    .vendor-cat-icon {
+        width: 44px; height: 44px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px;
+    }
+    .vendor-rating { color: #fbbf24; font-size: 14px; }
+    .vendor-status-badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 30px; }
+    .status-contacted { background: #e0f2fe; color: #0284c7; }
+    .status-confirmed { background: #d1fae5; color: #10b981; }
+    .status-paid { background: #f3e8ff; color: #7e22ce; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-1">Vendor Management 🤝</h2>
+            <p class="text-secondary mb-0">Event: <strong class="text-primary">{{ event.name }}</strong></p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select w-auto" onchange="location = this.value;">
+                {% for ev in events %}
+                <option value="{{ url_for('vendors.vendor_list', event_id=ev.id) }}" {% if ev.id == event.id %}selected{% endif %}>
+                    {{ ev.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary btn-premium text-nowrap" data-bs-toggle="modal" data-bs-target="#addVendorModal">
+                <i class="bi bi-plus-lg"></i> Add Vendor
+            </button>
+        </div>
+    </div>
+
+    <!-- Category Filter Tabs -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
+        <ul class="nav nav-pills gap-1">
+            <li class="nav-item">
+                <button class="nav-link active" onclick="filterVendors('all', this)">All</button>
+            </li>
+            {% for cat in categories %}
+            <li class="nav-item">
+                <button class="nav-link" onclick="filterVendors('{{ cat }}', this)">{{ cat }}</button>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="search-box">
+            <input type="text" id="vendorSearchInput" class="form-control" placeholder="Search vendor name..." onkeyup="searchVendors()">
+        </div>
+    </div>
+
+    <!-- Vendors Grid -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 vendor-grid" id="vendorsGrid">
+        {% for vendor in vendors %}
+        <div class="col vendor-col-item" data-category="{{ vendor.category }}" data-name="{{ vendor.name.lower() }}">
+            <div class="vendor-card shadow-sm h-100">
+                <div class="vendor-card-header">
+                    <div class="d-flex gap-3 align-items-center">
+                        <div class="vendor-cat-icon bg-primary bg-opacity-10 text-primary">
+                            {% if vendor.category == 'Catering' %}<i class="bi bi-cup-hot"></i>
+                            {% elif vendor.category == 'Decoration' %}<i class="bi bi-palette"></i>
+                            {% elif vendor.category == 'Photography' %}<i class="bi bi-camera"></i>
+                            {% elif vendor.category == 'Music' %}<i class="bi bi-music-note-beamed"></i>
+                            {% elif vendor.category == 'Venue' %}<i class="bi bi-building"></i>
+                            {% else %}<i class="bi bi-shop"></i>{% endif %}
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark">{{ vendor.name }}</h5>
+                            <span class="text-secondary small">{{ vendor.category }}</span>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-link btn-sm p-0 text-secondary" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
+                            <li><button class="dropdown-item text-danger" onclick="deleteVendor({{ vendor.id }})"><i class="bi bi-trash me-2"></i> Remove</button></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body px-4 py-2">
+                    <div class="vendor-rating mb-2">
+                        {% for i in range(vendor.rating|int) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                        {% for i in range(5 - vendor.rating|int) %}<i class="bi bi-star"></i>{% endfor %}
+                    </div>
+                    <p class="small text-secondary mb-3">{{ vendor.notes or 'No notes added' }}</p>
+                    <div class="d-flex flex-column gap-2 mb-3">
+                        <div class="d-flex align-items-center gap-2 text-secondary small">
+                            <i class="bi bi-telephone"></i>
+                            <span>{{ vendor.contact or 'N/A' }}</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 text-secondary small">
+                            <i class="bi bi-envelope"></i>
+                            <span>{{ vendor.email or 'N/A' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-light px-4 py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="small text-muted d-block">Cost</span>
+                        <strong class="text-dark">₹{{ "{:,.2f}".format(vendor.cost) }}</strong>
+                    </div>
+                    <span class="vendor-status-badge status-{{ vendor.status.lower() }}">
+                        {{ vendor.status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Vendor Modal -->
+<div class="modal fade" id="addVendorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 bg-primary text-white">
+                <h5 class="modal-title fw-bold">Add New Vendor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addVendorForm">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Vendor Name</label>
+                        <input type="text" class="form-control" name="name" required placeholder="e.g. Dream Catering">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select class="form-select" name="category">
+                            {% for cat in categories %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" class="form-control" name="contact" placeholder="Phone number">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" placeholder="Email address">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Estimated Cost</label>
+                            <input type="number" step="0.01" class="form-control" name="cost" placeholder="0.00">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="Contacted">Contacted</option>
+                                <option value="Confirmed">Confirmed</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Rating (1-5)</label>
+                        <select class="form-select" name="rating">
+                            <option value="5" selected>⭐⭐⭐⭐⭐ (5/5)</option>
+                            <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                            <option value="3">⭐⭐⭐ (3/5)</option>
+                            <option value="2">⭐⭐ (2/5)</option>
+                            <option value="1">⭐ (1/5)</option>
+                        </select>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Vendor terms, offerings, etc..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-premium">Add Vendor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('addVendorForm');
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        
+        fetch("{{ url_for('vendors.add_vendor', event_id=event.id) }}", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+    });
+});
+
+function filterVendors(cat, btn) {
+    // Update active tab styling
+    document.querySelectorAll('.nav-pills .nav-link').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // Hide/show cards
+    const items = document.querySelectorAll('.vendor-col-item');
+    items.forEach(item => {
+        if (cat === 'all' || item.dataset.category === cat) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function searchVendors() {
+    const query = document.getElementById('vendorSearchInput').value.toLowerCase();
+    const items = document.querySelectorAll('.vendor-col-item');
+    
+    items.forEach(item => {
+        const name = item.dataset.name;
+        if (name.includes(query)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function deleteVendor(id) {
+    if (!confirm('Are you sure you want to remove this vendor?')) return;
+    const fd = new FormData();
+    fd.append('csrf_token', "{{ csrf_token() }}");
+    
+    fetch(`/vendors/delete/${id}`, {
+        method: 'POST',
+        body: fd
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

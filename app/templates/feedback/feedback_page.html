@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Feedback & Reviews{% endblock %}
+{% block nav_feedback %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rating-big { font-size: 48px; font-weight: 800; color: var(--primary); line-height: 1.1; }
+    .stars-big { color: #fbbf24; font-size: 24px; }
+    .word-cloud-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 20px; }
+    .word-cloud-tag { padding: 6px 12px; border-radius: 20px; font-weight: 600; text-transform: lowercase; }
+    .sentiment-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
+    .sentiment-positive { background: #d1fae5; color: #10b981; }
+    .sentiment-neutral { background: #f1f5f9; color: #64748b; }
+    .sentiment-negative { background: #fee2e2; color: #ef4444; }
+    .feedback-item-card { border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; padding: 20px; margin-bottom: 16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-1">Guest Feedback & Reviews 💬</h2>
+            <p class="text-secondary mb-0">Event: <strong class="text-primary">{{ event.name }}</strong></p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select w-auto" onchange="location = this.value;">
+                {% for ev in events %}
+                <option value="{{ url_for('feedback.feedback_page', event_id=ev.id) }}" {% if ev.id == event.id %}selected{% endif %}>
+                    {{ ev.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <a href="{{ url_for('feedback.feedback_form', event_id=event.id) }}" target="_blank" class="btn btn-outline-primary">
+                <i class="bi bi-box-arrow-up-right"></i> Open Public Form
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats summary and Word Cloud -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100 text-center py-4">
+                <div class="card-body">
+                    <span class="text-uppercase text-muted small fw-semibold d-block mb-2">Average Rating</span>
+                    <div class="rating-big">{{ stats.average_rating }}</div>
+                    <div class="stars-big my-2">
+                        {% set full_stars = stats.average_rating|int %}
+                        {% for i in range(full_stars) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                        {% if stats.average_rating - full_stars >= 0.5 %}<i class="bi bi-star-half"></i>{% set full_stars = full_stars + 1 %}{% endif %}
+                        {% for i in range(5 - full_stars) %}<i class="bi bi-star"></i>{% endfor %}
+                    </div>
+                    <span class="text-secondary small">{{ stats.total }} Guest Reviews</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h6 class="fw-bold mb-0 text-center">Sentiment Ratios</h6>
+                </div>
+                <div class="card-body px-4 pb-4 d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2 small fw-semibold">
+                        <span class="text-success"><i class="bi bi-emoji-smile"></i> Positive</span>
+                        <span>{{ stats.positive_percent }}%</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ stats.positive_percent }}%"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 small fw-semibold">
+                        <span class="text-muted"><i class="bi bi-emoji-neutral"></i> Neutral</span>
+                        <span>{{ stats.neutral_percent }}%</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-secondary" style="width: {{ stats.neutral_percent }}%"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2 small fw-semibold">
+                        <span class="text-danger"><i class="bi bi-emoji-frown"></i> Negative</span>
+                        <span>{{ stats.negative_percent }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: {{ stats.negative_percent }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Word Cloud Keywords -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 text-center">
+                    <h6 class="fw-bold mb-0">Common Themes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="word-cloud-container">
+                        {% for word, count in common_themes %}
+                        <span class="word-cloud-tag {% if count > 4 %}bg-primary bg-opacity-10 text-primary fs-5{% elif count > 2 %}bg-secondary bg-opacity-10 text-secondary fs-6{% else %}bg-light text-muted small{% endif %}">
+                            {{ word }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted small">No feedback data to analyze themes.</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedbacks List -->
+    <div class="row">
+        <div class="col-12">
+            <h5 class="fw-bold mb-3">All Feedback ({{ feedback|length }})</h5>
+            {% for item in feedback %}
+            <div class="feedback-item-card shadow-sm">
+                <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+                    <div class="d-flex gap-3 align-items-center">
+                        <div class="fs-2">{{ item.emoji }}</div>
+                        <div>
+                            <h6 class="fw-bold text-dark mb-0">{{ item.guest_name }}</h6>
+                            <span class="text-secondary small">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="sentiment-tag sentiment-{{ item.sentiment.lower() }}">{{ item.sentiment }}</span>
+                        <div class="stars-big text-warning fs-6">
+                            {% for i in range(item.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                            {% for i in range(5 - item.rating) %}<i class="bi bi-star"></i>{% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <p class="text-dark mb-0 italic-text">"{{ item.comment }}"</p>
+            </div>
+            {% else %}
+            <div class="card border-0 shadow-sm text-center p-5">
+                <div class="fs-1 text-muted"><i class="bi bi-chat-left-dots"></i></div>
+                <h5 class="fw-bold mt-3">No feedback yet</h5>
+                <p class="text-secondary mb-0">Share the feedback form link with your guests to collect reviews!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

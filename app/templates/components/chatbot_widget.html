@@ -1,0 +1,73 @@
+<!-- Floating Chatbot Trigger Button -->
+<div class="chat-widget-btn" id="chatWidgetBtn" aria-label="Open AI Assistant" title="Open AI Assistant">
+    <i class="bi bi-chat-dots-fill text-white fs-4"></i>
+    <span class="chat-widget-badge" id="chatWidgetBadge">1</span>
+</div>
+
+<!-- Floating Chatbot Window -->
+<div class="chat-widget-window collapsed" id="chatWidgetWindow">
+    <!-- Header -->
+    <div class="chat-widget-header">
+        <div class="d-flex align-items-center gap-2">
+            <div class="chat-widget-avatar">🤖</div>
+            <div>
+                <div class="chat-widget-title">AI Assistant</div>
+                <div class="chat-widget-status"><span class="status-dot online"></span>Online</div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button class="chat-header-btn" id="chatWidgetVolumeBtn" title="Mute voice responses">
+                <i class="bi bi-volume-up-fill text-white"></i>
+            </button>
+            <button class="chat-header-btn" id="chatWidgetClearBtn" title="Clear chat history">
+                <i class="bi bi-trash text-white"></i>
+            </button>
+            <button class="chat-header-btn" id="chatWidgetCloseBtn" aria-label="Close AI Assistant" title="Close">
+                <i class="bi bi-x-lg text-white"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Messages Body -->
+    <div class="chat-widget-body" id="chatWidgetBody">
+        <!-- Welcoming Msg -->
+        <div class="chat-message bot">
+            <div class="chat-message-content">
+                Hello! 👋 I'm your AI Event Assistant. Ask me about event details, guest counts, budgets, tasks, or anything else!
+            </div>
+            <div class="chat-message-time">Just now</div>
+        </div>
+
+        <!-- Suggestion Chips -->
+        <div class="chat-suggestions mb-3" id="chatWidgetSuggestions">
+            <button class="chat-suggestion-chip" data-query="How many guests do we have?">How many guests?</button>
+            <button class="chat-suggestion-chip" data-query="Show event budget summary.">Budget summary</button>
+            <button class="chat-suggestion-chip" data-query="What is my task status?">Task status</button>
+            <button class="chat-suggestion-chip" data-query="Show upcoming events.">Upcoming events</button>
+        </div>
+
+        <!-- Typing Indicator (hidden by default) -->
+        <div class="chat-message bot typing" id="chatWidgetTyping" style="display: none;">
+            <div class="chat-message-content">
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Input Bar -->
+    <div class="chat-widget-footer">
+        <form id="chatWidgetForm" class="d-flex align-items-center gap-2 w-100">
+            <input type="text" id="chatWidgetInput" class="chat-widget-input form-control" placeholder="Ask AI Assistant..." autocomplete="off" required>
+            <button type="button" id="chatWidgetMicBtn" class="chat-widget-mic-btn" title="Speak to Assistant">
+                <i class="bi bi-mic-fill"></i>
+            </button>
+            <button type="submit" class="chat-widget-send-btn" title="Send Message">
+                <i class="bi bi-send-fill text-white"></i>
+            </button>
+        </form>
+    </div>
+</div>

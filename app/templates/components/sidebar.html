@@ -1,0 +1,117 @@
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <!-- Logo -->
+    <div class="sidebar-header">
+        <div class="sidebar-logo-icon">🎉</div>
+        <div class="sidebar-logo-text"><span>Event</span>Pro AI</div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+        <!-- MAIN -->
+        <span class="nav-section-label">Main</span>
+
+        <div class="nav-item">
+            <a href="{{ url_for('events.dashboard') }}" class="nav-link {% if request.endpoint == 'events.dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i>
+                <span class="nav-link-text">Dashboard</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="{{ url_for('events.events_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('events.events') %}active{% endif %}">
+                <i class="bi bi-calendar-event"></i>
+                <span class="nav-link-text">Events</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="{{ url_for('guests.guest_list_all') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('guests.guest') %}active{% endif %}">
+                <i class="bi bi-people"></i>
+                <span class="nav-link-text">Guests</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="{{ url_for('guests.attendance_all') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('guests.attendance') %}active{% endif %}">
+                <i class="bi bi-qr-code-scan"></i>
+                <span class="nav-link-text">Attendance</span>
+            </a>
+        </div>
+
+        <!-- AI FEATURES -->
+        <span class="nav-section-label">AI Features</span>
+
+        <div class="nav-item">
+            <a href="{{ url_for('chatbot.chat') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('chatbot.') %}active{% endif %}">
+                <i class="bi bi-robot"></i>
+                <span class="nav-link-text">AI Assistant</span>
+                <span class="badge bg-primary">New</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="{{ url_for('invitations.invitation_page') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('invitations.') %}active{% endif %}">
+                <i class="bi bi-envelope-paper"></i>
+                <span class="nav-link-text">Invitations</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="{{ url_for('budget.budget_page') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('budget.') %}active{% endif %}">
+                <i class="bi bi-piggy-bank"></i>
+                <span class="nav-link-text">Budget Advisor</span>
+            </a>
+        </div>
+
+        <!-- MANAGEMENT -->
+        <span class="nav-section-label">Management</span>
+
+        <div class="nav-item">
+            <a href="{{ url_for('tasks.task_board') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('tasks.') %}active{% endif %}">
+                <i class="bi bi-kanban"></i>
+                <span class="nav-link-text">Tasks</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="{{ url_for('vendors.vendor_list') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('vendors.') %}active{% endif %}">
+                <i class="bi bi-shop"></i>
+                <span class="nav-link-text">Vendors</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="{{ url_for('analytics.analytics_page') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('analytics.') %}active{% endif %}">
+                <i class="bi bi-graph-up"></i>
+                <span class="nav-link-text">Analytics</span>
+            </a>
+        </div>
+
+        <div class="nav-item">
+            <a href="{{ url_for('feedback.feedback_page') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('feedback.') %}active{% endif %}">
+                <i class="bi bi-chat-square-heart"></i>
+                <span class="nav-link-text">Feedback</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+        {% if current_user and current_user.is_authenticated %}
+        <div class="sidebar-user">
+            <div class="avatar avatar-sm">
+                {{ current_user.username[0]|upper if current_user.username else 'U' }}
+            </div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name">{{ current_user.username or 'User' }}</span>
+                <span class="sidebar-user-role">Event Planner</span>
+            </div>
+        </div>
+        {% endif %}
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar">
+            <i class="bi bi-chevron-double-left"></i>
+            <span class="btn-text">Collapse</span>
+        </button>
+    </div>
+</aside>

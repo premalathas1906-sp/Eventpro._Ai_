@@ -1,0 +1,639 @@
+{% extends "base.html" %}
+{% block title %}Smart Invitation Generator{% endblock %}
+{% block nav_invitations %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ── Invitation Page Styles ── */
+    .page-header {
+        margin-bottom: 28px;
+    }
+    .page-header h2 { font-weight: 800; font-size: 28px; }
+    .page-header p { color: var(--text-secondary); font-size: 15px; margin-top: 4px; }
+
+    /* ── Configuration Panel ── */
+    .config-card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .config-card .card-header {
+        background: var(--gradient-accent);
+        color: #fff;
+        font-weight: 700;
+        padding: 16px 20px;
+        border: none;
+    }
+    .config-card .card-body { padding: 24px; }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    /* ── Tone Selector ── */
+    .tone-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .tone-btn {
+        padding: 10px 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        background: #fff;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        color: var(--text-secondary);
+        transition: all 0.3s ease;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .tone-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .tone-btn.active {
+        border-color: var(--primary);
+        background: rgba(108,99,255,0.08);
+        color: var(--primary);
+    }
+    .tone-btn input { display: none; }
+
+    /* ── Preview Panel ── */
+    .preview-card {
+        border-radius: 12px;
+        overflow: hidden;
+        min-height: 500px;
+    }
+    .preview-card .card-header {
+        background: rgba(108,99,255,0.05);
+        padding: 14px 20px;
+        font-weight: 700;
+        font-size: 15px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .preview-actions { display: flex; gap: 8px; }
+
+    /* ── Invitation Templates ── */
+    .invitation-preview {
+        padding: 32px;
+        min-height: 420px;
+        position: relative;
+        transition: all 0.5s ease;
+    }
+
+    /* Wedding */
+    .invite-wedding {
+        background: linear-gradient(135deg, #fdf6f0 0%, #fff5ee 50%, #fef0e6 100%);
+        border: 3px double #d4a574;
+        text-align: center;
+    }
+    .invite-wedding .invite-heading {
+        font-family: 'Georgia', 'Times New Roman', serif;
+        font-size: 32px;
+        font-weight: 400;
+        color: #8b6914;
+        margin-bottom: 6px;
+        letter-spacing: 2px;
+    }
+    .invite-wedding .invite-subheading {
+        font-family: 'Georgia', serif;
+        font-size: 14px;
+        color: #b8860b;
+        font-style: italic;
+        margin-bottom: 20px;
+    }
+    .invite-wedding .decorative-line {
+        width: 120px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #d4a574, transparent);
+        margin: 16px auto;
+    }
+    .invite-wedding .invite-names {
+        font-family: 'Georgia', serif;
+        font-size: 26px;
+        color: #6b4226;
+        margin: 12px 0;
+    }
+    .invite-wedding .invite-body {
+        font-size: 15px;
+        line-height: 1.8;
+        color: #5a4a3f;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    .invite-wedding .corner-ornament {
+        position: absolute;
+        width: 50px; height: 50px;
+        opacity: 0.3;
+    }
+    .invite-wedding .corner-ornament.tl { top: 12px; left: 12px; border-top: 3px solid #d4a574; border-left: 3px solid #d4a574; }
+    .invite-wedding .corner-ornament.tr { top: 12px; right: 12px; border-top: 3px solid #d4a574; border-right: 3px solid #d4a574; }
+    .invite-wedding .corner-ornament.bl { bottom: 12px; left: 12px; border-bottom: 3px solid #d4a574; border-left: 3px solid #d4a574; }
+    .invite-wedding .corner-ornament.br { bottom: 12px; right: 12px; border-bottom: 3px solid #d4a574; border-right: 3px solid #d4a574; }
+
+    /* Birthday */
+    .invite-birthday {
+        background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 50%, #ff9a9e 100%);
+        border-radius: 16px;
+        text-align: center;
+        color: #4a2c2a;
+        position: relative;
+        overflow: hidden;
+    }
+    .invite-birthday::before {
+        content: '🎉🎈🎂🎊🎁';
+        position: absolute; top: -5px; left: 0; right: 0;
+        font-size: 28px; letter-spacing: 20px;
+        text-align: center; animation: confettiFloat 3s ease-in-out infinite;
+    }
+    @keyframes confettiFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(5px); }
+    }
+    .invite-birthday .invite-heading {
+        font-size: 36px; font-weight: 800;
+        margin-top: 30px;
+        background: linear-gradient(135deg, #e63946, #e76f51);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .invite-birthday .invite-body {
+        font-size: 16px; line-height: 1.8;
+        margin: 16px auto; max-width: 380px;
+    }
+
+    /* College */
+    .invite-college {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border-radius: 16px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    .invite-college::after {
+        content: '';
+        position: absolute; top: -50%; right: -50%;
+        width: 200%; height: 200%;
+        background: repeating-linear-gradient(
+            45deg, transparent, transparent 30px,
+            rgba(255,255,255,0.03) 30px, rgba(255,255,255,0.03) 60px
+        );
+    }
+    .invite-college .invite-heading {
+        font-size: 28px; font-weight: 800;
+        position: relative; z-index: 1;
+    }
+    .invite-college .invite-body {
+        font-size: 15px; line-height: 1.8;
+        position: relative; z-index: 1;
+        max-width: 400px; margin: 16px auto;
+        opacity: 0.9;
+    }
+
+    /* Corporate */
+    .invite-corporate {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-top: 5px solid #1e293b;
+    }
+    .invite-corporate .invite-heading {
+        font-size: 24px; font-weight: 700;
+        color: #1e293b;
+    }
+    .invite-corporate .invite-body {
+        font-size: 14px; line-height: 1.8;
+        color: #475569;
+    }
+
+    /* Common invite */
+    .invite-details {
+        margin-top: 20px;
+        padding: 16px;
+        background: rgba(255,255,255,0.3);
+        border-radius: 10px;
+        backdrop-filter: blur(5px);
+    }
+    .invite-detail-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 6px 0; font-size: 14px;
+    }
+    .invite-detail-item i { font-size: 16px; width: 20px; text-align: center; }
+
+    .invite-rsvp {
+        margin-top: 20px;
+        padding: 12px 24px;
+        background: var(--gradient-accent);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    /* ── Tone Examples ── */
+    .tone-example-card {
+        border-radius: 10px;
+        padding: 20px;
+        border-left: 4px solid var(--primary);
+        transition: transform 0.3s;
+    }
+    .tone-example-card:hover { transform: translateY(-3px); }
+    .tone-example-card h6 { font-weight: 700; font-size: 14px; }
+    .tone-example-card p {
+        font-size: 13px; color: var(--text-secondary);
+        line-height: 1.6; margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="page-header" data-aos="fade-down">
+    <h2>Smart Invitation Generator ✨</h2>
+    <p>AI-powered personalized invitations for your events</p>
+</div>
+
+<div class="row g-4">
+    <!-- Configuration Panel -->
+    <div class="col-md-5" data-aos="fade-right" data-aos-delay="100">
+        <div class="card config-card">
+            <div class="card-header">
+                <i class="bi bi-sliders me-2"></i> Configuration
+            </div>
+            <div class="card-body">
+                <form id="invitationForm">
+                    <!-- Event Selector -->
+                    <div class="mb-3">
+                        <label class="form-label">Select Event</label>
+                        <select class="form-select" id="eventSelect">
+                            {% if not events %}
+                            <option value="" disabled selected>No events available</option>
+                            {% endif %}
+                            {% for ev in events %}
+                            <option value="{{ ev.id }}" data-type="{{ ev.event_type }}" data-venue="{{ ev.venue or '' }}" data-date="{{ ev.date.strftime('%A, %B %d, %Y') if ev.date else '' }}" data-time="{{ ev.time.strftime('%I:%M %p') if ev.time else '' }}" {% if loop.first %}selected{% endif %}>{{ ev.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Event Type -->
+                    <div class="mb-3">
+                        <label class="form-label">Event Type</label>
+                        <select class="form-select" id="eventType">
+                            <option value="wedding" selected>Wedding</option>
+                            <option value="birthday">Birthday</option>
+                            <option value="college">College / Fest</option>
+                            <option value="corporate">Corporate</option>
+                        </select>
+                    </div>
+
+                    <!-- Tone Selector -->
+                    <div class="mb-3">
+                        <label class="form-label">Tone</label>
+                        <div class="tone-group" id="toneSelector">
+                            <label class="tone-btn" data-tone="formal">
+                                <input type="radio" name="tone" value="formal">
+                                🎩 Formal
+                            </label>
+                            <label class="tone-btn" data-tone="casual">
+                                <input type="radio" name="tone" value="casual">
+                                😊 Casual
+                            </label>
+                            <label class="tone-btn active" data-tone="elegant">
+                                <input type="radio" name="tone" value="elegant" checked>
+                                ✨ Elegant
+                            </label>
+                            <label class="tone-btn" data-tone="fun">
+                                <input type="radio" name="tone" value="fun">
+                                🎉 Fun
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Guest Name -->
+                    <div class="mb-3">
+                        <label class="form-label">Guest Name</label>
+                        <input type="text" class="form-control" id="guestName" value="Dr. Priya Sharma" placeholder="Enter guest name for personalization">
+                    </div>
+
+                    <!-- Custom Message -->
+                    <div class="mb-4">
+                        <label class="form-label">Custom Message <span style="font-weight:400; color:var(--text-muted)">(Optional)</span></label>
+                        <textarea class="form-control" id="customMessage" rows="3" placeholder="Add a personal touch to the invitation...">We would be truly honored by your presence on this special day.</textarea>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button type="button" class="btn btn-gradient w-100" id="generateBtn" style="padding:14px;">
+                        <i class="bi bi-stars me-2"></i> Generate Invitation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="col-md-7" data-aos="fade-left" data-aos-delay="200">
+        <div class="card preview-card">
+            <div class="card-header">
+                <span><i class="bi bi-eye me-2"></i> Live Preview</span>
+                <div class="preview-actions">
+                    <button class="btn btn-sm btn-outline-secondary" style="border-radius:8px;" id="downloadBtn">
+                        <i class="bi bi-download me-1"></i> Download
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" style="border-radius:8px;" id="sendBtn">
+                        <i class="bi bi-send me-1"></i> Send
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" style="border-radius:8px;" id="regenerateBtn">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Regenerate
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="invitation-preview invite-wedding" id="invitePreview">
+                    <!-- Corner Ornaments -->
+                    <div class="corner-ornament tl"></div>
+                    <div class="corner-ornament tr"></div>
+                    <div class="corner-ornament bl"></div>
+                    <div class="corner-ornament br"></div>
+
+                    <div class="invite-subheading">Together with their families</div>
+                    <div class="decorative-line"></div>
+                    <div class="invite-heading" id="previewHeading">Sarah & James</div>
+                    <div class="decorative-line"></div>
+                    <div class="invite-subheading">request the pleasure of your company</div>
+
+                    <div class="invite-names" id="previewGuest">Dear Dr. Priya Sharma</div>
+
+                    <div class="invite-body" id="previewBody">
+                        We would be truly honored by your presence as we celebrate the union of two hearts. 
+                        Join us for an enchanting evening of love, laughter, and happily ever after.
+                    </div>
+
+                    <div class="invite-details">
+                        <div class="invite-detail-item">
+                            <i class="bi bi-calendar-heart"></i>
+                            <span><strong>Date:</strong> Saturday, August 15, 2026</span>
+                        </div>
+                        <div class="invite-detail-item">
+                            <i class="bi bi-clock"></i>
+                            <span><strong>Time:</strong> 6:00 PM Onwards</span>
+                        </div>
+                        <div class="invite-detail-item">
+                            <i class="bi bi-geo-alt"></i>
+                            <span><strong>Venue:</strong> The Grand Ballroom, Taj Palace, New Delhi</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3" style="font-size:12px; color:#8b6914; font-style:italic;">
+                        Kindly RSVP by August 1, 2026
+                    </div>
+                    <button class="invite-rsvp mt-2">RSVP Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tone Examples Section -->
+<div class="row mt-5 g-4" data-aos="fade-up" data-aos-delay="300">
+    <div class="col-12">
+        <h5 style="font-weight:700; margin-bottom:16px;"><i class="bi bi-palette me-2"></i>Tone Examples</h5>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+        <div class="card tone-example-card" style="border-left-color:#6c63ff;">
+            <h6>🎩 Formal</h6>
+            <p>"The honour of your presence is requested at the celebration of the union of Sarah Elizabeth and James Robert..."</p>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+        <div class="card tone-example-card" style="border-left-color:#3b82f6;">
+            <h6>😊 Casual</h6>
+            <p>"Hey there! Sarah and James are tying the knot and you're invited! Come celebrate with us over great food and even better company..."</p>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+        <div class="card tone-example-card" style="border-left-color:#10b981;">
+            <h6>🎉 Fun</h6>
+            <p>"PARTY ALERT! 🎊 Sarah + James = Married! Drop everything and mark your calendars because this is going to be EPIC..."</p>
+        </div>
+    </div>
+    <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+        <div class="card tone-example-card" style="border-left-color:#f59e0b;">
+            <h6>✨ Elegant</h6>
+            <p>"With hearts full of love and joy, Sarah and James invite you to share in the beginning of their forever. An evening of enchantment awaits..."</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const toneButtons = document.querySelectorAll('.tone-btn');
+    const eventTypeSelect = document.getElementById('eventType');
+    const guestNameInput = document.getElementById('guestName');
+    const preview = document.getElementById('invitePreview');
+    const eventSelect = document.getElementById('eventSelect');
+    const customMessage = document.getElementById('customMessage');
+
+    window.currentEventDetails = {
+        name: 'Sarah & James Wedding',
+        venue: 'The Grand Ballroom',
+        date: 'Saturday, August 15, 2026',
+        time: '6:00 PM Onwards'
+    };
+
+    // Tone selector
+    toneButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            toneButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            btn.querySelector('input').checked = true;
+            updatePreview();
+        });
+    });
+
+    // Event type change
+    eventTypeSelect.addEventListener('change', updatePreview);
+    guestNameInput.addEventListener('input', updatePreview);
+    customMessage.addEventListener('input', updatePreview);
+
+    const templates = {
+        wedding: {
+            className: 'invite-wedding',
+            html: () => `
+                <div class="corner-ornament tl"></div>
+                <div class="corner-ornament tr"></div>
+                <div class="corner-ornament bl"></div>
+                <div class="corner-ornament br"></div>
+                <div class="invite-subheading">Together with their families</div>
+                <div class="decorative-line"></div>
+                <div class="invite-heading" id="previewHeading">${window.currentEventDetails.name}</div>
+                <div class="decorative-line"></div>
+                <div class="invite-subheading">request the pleasure of your company</div>
+                <div class="invite-names" id="previewGuest">Dear ${guestNameInput.value || 'Guest'}</div>
+                <div class="invite-body" id="previewBody">${customMessage.value || 'We would be truly honored by your presence as we celebrate the union of two hearts. Join us for an enchanting evening of love, laughter, and happily ever after.'}</div>
+                <div class="invite-details">
+                    <div class="invite-detail-item"><i class="bi bi-calendar-heart"></i><span><strong>Date:</strong> ${window.currentEventDetails.date || 'Saturday, August 15, 2026'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-clock"></i><span><strong>Time:</strong> ${window.currentEventDetails.time || '6:00 PM Onwards'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-geo-alt"></i><span><strong>Venue:</strong> ${window.currentEventDetails.venue || 'The Grand Ballroom'}</span></div>
+                </div>
+                <div class="mt-3" style="font-size:12px; color:#8b6914; font-style:italic;">Kindly RSVP by 14 days before event</div>
+                <button class="invite-rsvp mt-2">RSVP Now</button>`
+        },
+        birthday: {
+            className: 'invite-birthday',
+            html: () => `
+                <div class="invite-heading" id="previewHeading">🎂 You're Invited! 🎂</div>
+                <div style="font-size:18px; font-weight:600; margin:8px 0;">${window.currentEventDetails.name}</div>
+                <div class="invite-names" id="previewGuest">Hey ${guestNameInput.value || 'Friend'}!</div>
+                <div class="invite-body" id="previewBody">${customMessage.value || 'Come celebrate an amazing birthday bash filled with fun, laughter, and unforgettable moments. We promise cake, music, and the best time ever!'}</div>
+                <div class="invite-details" style="background:rgba(255,255,255,0.5);">
+                    <div class="invite-detail-item"><i class="bi bi-calendar-event"></i><span><strong>Date:</strong> ${window.currentEventDetails.date || 'July 20, 2026'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-clock"></i><span><strong>Time:</strong> ${window.currentEventDetails.time || '4:00 PM - Late!'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-geo-alt"></i><span><strong>Venue:</strong> ${window.currentEventDetails.venue || 'Skyline Rooftop Lounge'}</span></div>
+                </div>
+                <button class="invite-rsvp mt-3">🎉 Count Me In!</button>`
+        },
+        college: {
+            className: 'invite-college',
+            html: () => `
+                <div style="font-size:13px; text-transform:uppercase; letter-spacing:3px; opacity:0.8; position:relative; z-index:1;">You are cordially invited to</div>
+                <div class="invite-heading" id="previewHeading" style="margin:12px 0; position:relative; z-index:1;">${window.currentEventDetails.name}</div>
+                <div style="font-size:15px; opacity:0.9; position:relative; z-index:1;">Innovation • Inspiration • Impact</div>
+                <div class="invite-names" id="previewGuest" style="color:#fff; margin:16px 0; position:relative; z-index:1;">Dear ${guestNameInput.value || 'Participant'}</div>
+                <div class="invite-body" id="previewBody">${customMessage.value || 'Join the brightest minds in technology for a day of cutting-edge talks, hands-on workshops, and networking opportunities that will shape the future.'}</div>
+                <div class="invite-details" style="border:1px solid rgba(255,255,255,0.2); position:relative; z-index:1;">
+                    <div class="invite-detail-item"><i class="bi bi-calendar-event"></i><span><strong>Date:</strong> ${window.currentEventDetails.date || 'September 5, 2026'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-clock"></i><span><strong>Time:</strong> ${window.currentEventDetails.time || '9:00 AM - 6:00 PM'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-geo-alt"></i><span><strong>Venue:</strong> ${window.currentEventDetails.venue || 'University Auditorium'}</span></div>
+                </div>
+                <button class="invite-rsvp mt-3" style="background:#fff; color:#764ba2;">Register Now</button>`
+        },
+        corporate: {
+            className: 'invite-corporate',
+            html: () => `
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
+                    <div style="width:40px; height:40px; background:var(--gradient-accent); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;"><i class="bi bi-building"></i></div>
+                    <div style="font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--text-muted);">Corporate Invitation</div>
+                </div>
+                <div class="invite-heading" id="previewHeading">${window.currentEventDetails.name}</div>
+                <div style="height:3px; width:50px; background:var(--gradient-accent); border-radius:2px; margin:16px 0;"></div>
+                <div id="previewGuest" style="font-weight:600; margin-bottom:12px;">Dear ${guestNameInput.value || 'Colleague'}</div>
+                <div class="invite-body" id="previewBody">${customMessage.value || 'We are pleased to invite you to our Annual Business Conference. This event brings together industry leaders and innovators for a day of insightful discussions, strategic planning, and professional networking.'}</div>
+                <div class="invite-details" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                    <div class="invite-detail-item"><i class="bi bi-calendar3" style="color:var(--primary)"></i><span><strong>Date:</strong> ${window.currentEventDetails.date || 'October 10, 2026'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-clock" style="color:var(--primary)"></i><span><strong>Time:</strong> ${window.currentEventDetails.time || '10:00 AM - 5:00 PM'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-geo-alt" style="color:var(--primary)"></i><span><strong>Venue:</strong> ${window.currentEventDetails.venue || 'Convention Center'}</span></div>
+                    <div class="invite-detail-item"><i class="bi bi-tag" style="color:var(--primary)"></i><span><strong>Dress Code:</strong> Business Formal</span></div>
+                </div>
+                <button class="invite-rsvp mt-3">Confirm Attendance</button>`
+        }
+    };
+
+    function updatePreview() {
+        const type = eventTypeSelect.value;
+        const tpl = templates[type];
+        if (!tpl) return;
+
+        // Remove all template classes
+        preview.className = 'invitation-preview ' + tpl.className;
+        
+        // Update html
+        preview.innerHTML = tpl.html();
+
+        // Animate
+        preview.style.opacity = '0';
+        preview.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            preview.style.opacity = '1';
+            preview.style.transform = 'scale(1)';
+        }, 50);
+    }
+
+    function updateEventData() {
+        if (!eventSelect) return;
+        const option = eventSelect.options[eventSelect.selectedIndex];
+        if (!option || option.disabled) return;
+        
+        const type = option.getAttribute('data-type');
+        const venue = option.getAttribute('data-venue');
+        const date = option.getAttribute('data-date');
+        const time = option.getAttribute('data-time');
+        
+        if (type) {
+            let mappedType = 'wedding';
+            const t = type.toLowerCase();
+            if (t.includes('wedding')) mappedType = 'wedding';
+            else if (t.includes('birthday')) mappedType = 'birthday';
+            else if (t.includes('college') || t.includes('fest')) mappedType = 'college';
+            else if (t.includes('corporate') || t.includes('business')) mappedType = 'corporate';
+            
+            eventTypeSelect.value = mappedType;
+        }
+        
+        window.currentEventDetails = {
+            name: option.textContent,
+            venue: venue || 'TBD',
+            date: date || 'TBD',
+            time: time || 'TBD'
+        };
+        
+        updatePreview();
+    }
+
+    // Parse URL query parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const paramEventId = urlParams.get('event_id');
+    const paramGuestName = urlParams.get('guest_name');
+
+    if (paramEventId && eventSelect) {
+        eventSelect.value = paramEventId;
+    }
+    if (paramGuestName && guestNameInput) {
+        guestNameInput.value = paramGuestName;
+    }
+
+    if (eventSelect) {
+        eventSelect.addEventListener('change', updateEventData);
+    }
+
+    // Initialize values on load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateEventData();
+    });
+
+    // Handle instant load if DOMContentLoaded already fired
+    updateEventData();
+
+    // Generate button
+    document.getElementById('generateBtn').addEventListener('click', () => {
+        const btn = document.getElementById('generateBtn');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Generating...';
+        btn.disabled = true;
+        setTimeout(() => {
+            updatePreview();
+            btn.innerHTML = '<i class="bi bi-stars me-2"></i> Generate Invitation';
+            btn.disabled = false;
+        }, 1500);
+    });
+
+    // Regenerate
+    document.getElementById('regenerateBtn').addEventListener('click', () => updatePreview());
+
+    // Download placeholder
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+        showToast('Saving invitation image to your downloads folder...', 'success');
+    });
+
+    // Send placeholder
+    document.getElementById('sendBtn').addEventListener('click', () => {
+        showToast('Invitation successfully emailed to all confirmed guests!', 'success');
+    });
+})();
+</script>
+{% endblock %}

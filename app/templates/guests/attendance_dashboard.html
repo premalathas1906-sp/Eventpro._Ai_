@@ -1,0 +1,682 @@
+{% extends "base.html" %}
+
+{% block title %}Live Attendance{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ───── Attendance Dashboard Styles ───── */
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+.page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Pulsing Live Dot */
+.live-dot {
+    width: 12px;
+    height: 12px;
+    background: var(--success);
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    flex-shrink: 0;
+}
+.live-dot::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.3);
+    animation: livePulse 2s ease-in-out infinite;
+}
+@keyframes livePulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Counter Cards */
+.counter-card {
+    border-radius: var(--radius-card);
+    padding: 28px 24px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+.counter-card::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+}
+.counter-card::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: -15px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+}
+.counter-card.blue { background: linear-gradient(135deg, #6c63ff, #3b82f6); }
+.counter-card.green { background: linear-gradient(135deg, #10b981, #059669); }
+.counter-card.orange { background: linear-gradient(135deg, #f59e0b, #f97316); }
+
+.counter-card .counter-icon {
+    font-size: 2rem;
+    opacity: 0.6;
+    position: absolute;
+    top: 20px;
+    right: 24px;
+}
+.counter-card .counter-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    opacity: 0.85;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+}
+.counter-card .counter-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+.counter-card .counter-sub {
+    font-size: 0.82rem;
+    opacity: 0.75;
+}
+
+/* Scanner Card */
+.scanner-area {
+    background: #0f172a;
+    border-radius: 12px;
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.5);
+    position: relative;
+    overflow: hidden;
+}
+.scanner-area .scanner-frame {
+    width: 160px;
+    height: 160px;
+    border: 3px solid rgba(108,99,255,0.5);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    position: relative;
+}
+.scanner-area .scanner-frame::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    border-top-color: var(--primary);
+    animation: scanSpin 2s linear infinite;
+}
+@keyframes scanSpin {
+    to { transform: rotate(360deg); }
+}
+.scanner-area .scanner-frame i {
+    font-size: 3rem;
+    color: var(--primary);
+    opacity: 0.5;
+}
+
+/* Manual Check-in */
+.manual-checkin {
+    position: relative;
+}
+.manual-checkin i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+.manual-checkin input {
+    padding-left: 40px;
+}
+
+/* Recent Check-ins Table */
+.checkin-table {
+    font-size: 0.82rem;
+}
+.checkin-table th {
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom-width: 1px;
+}
+.checkin-table td {
+    vertical-align: middle;
+    padding: 10px;
+}
+.checkin-time {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Check-in status */
+.checkin-status {
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+.checkin-status.in { background: rgba(16,185,129,0.12); color: #059669; }
+.checkin-status.out { background: rgba(245,158,11,0.12); color: #d97706; }
+
+/* Guest Check-in List Filters */
+.checkin-filters {
+    display: flex;
+    gap: 6px;
+    background: var(--card-bg);
+    padding: 4px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.checkin-filters .ck-btn {
+    border: none;
+    background: none;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.checkin-filters .ck-btn.active,
+.checkin-filters .ck-btn:hover {
+    background: var(--gradient-accent);
+    color: #fff;
+}
+
+/* Guest Row Avatar */
+.ck-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+@media (max-width: 575.98px) {
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .counter-card .counter-number { font-size: 2rem; }
+    .scanner-area { height: 220px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header" data-aos="fade-down">
+    <h1>
+        <span class="live-dot"></span>
+        Live Attendance
+    </h1>
+    <div class="header-actions">
+        <select class="form-select form-select-sm" id="eventSelect" style="max-width:220px;border-radius:8px;font-size:0.82rem;font-weight:500;">
+            {% for ev in events %}
+            <option value="{{ ev.id }}" {% if ev.id == event.id %}selected{% endif %}>{{ ev.name }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-gradient" id="startScanBtn">
+            <i class="bi bi-qr-code-scan me-1"></i> Start Scanning
+        </button>
+    </div>
+</div>
+
+<!-- Live Stats Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="0">
+        <div class="counter-card blue">
+            <i class="bi bi-people counter-icon"></i>
+            <div class="counter-label">Total Guests</div>
+            <div class="counter-number">{{ total }}</div>
+            <div class="counter-sub">Expected attendees</div>
+        </div>
+    </div>
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="80">
+        <div class="counter-card green">
+            <i class="bi bi-check-circle counter-icon"></i>
+            <div class="counter-label">Checked In</div>
+            <div class="counter-number">{{ checked_in }}</div>
+            <div class="counter-sub">{{ (checked_in / total * 100)|int if total else 0 }}% of total</div>
+        </div>
+    </div>
+    <div class="col-md-4" data-aos="fade-up" data-aos-delay="160">
+        <div class="counter-card orange">
+            <i class="bi bi-hourglass counter-icon"></i>
+            <div class="counter-label">Remaining</div>
+            <div class="counter-number">{{ remaining }}</div>
+            <div class="counter-sub">{{ (remaining / total * 100)|int if total else 0 }}% pending</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content: Scanner + Sidebar -->
+<div class="row g-4 mb-4">
+    <!-- Left Column: Scanner + Recent -->
+    <div class="col-lg-8">
+        <!-- QR Scanner Card -->
+        <div class="card mb-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-qr-code-scan text-primary me-2"></i>QR Scanner</h6>
+                <div class="scanner-area mb-3">
+                    <div class="scanner-frame">
+                        <i class="bi bi-camera-video"></i>
+                    </div>
+                    <p class="mb-2" style="font-size:0.85rem;">Camera preview will appear here</p>
+                    <button class="btn btn-gradient btn-sm" id="startCameraBtn">
+                        <i class="bi bi-camera-video-fill me-1"></i>Start Camera
+                    </button>
+                </div>
+                <p class="text-muted text-center mb-0" style="font-size:0.78rem;">
+                    <i class="bi bi-info-circle me-1"></i>Position the QR code within the frame to automatically check in the guest
+                </p>
+            </div>
+        </div>
+
+        <!-- Manual Check-in -->
+        <div class="card mb-4" data-aos="fade-up" data-aos-delay="120">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-search text-primary me-2"></i>Manual Check-in</h6>
+                <div class="manual-checkin mb-3">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="form-control" id="manualSearch" placeholder="Search guest by name to check in...">
+                </div>
+                <div id="manualSearchResults">
+                    <!-- Search results appear here -->
+                    <div class="text-center text-muted py-3" style="font-size:0.85rem;">
+                        <i class="bi bi-person-check me-1"></i>Type a guest name to find and check them in
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Check-ins -->
+        <div class="card" data-aos="fade-up" data-aos-delay="140">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-2"></i>Recent Check-ins</h6>
+                    <span class="badge" style="background:rgba(16,185,129,0.12);color:#059669;border-radius:8px;font-weight:600;">Last {{ recent_check_ins|length }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table checkin-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Guest</th>
+                                <th>Time</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ck in recent_check_ins %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="ck-avatar" style="background:var(--gradient-accent)">{{ ck.name[:2]|upper }}</div>
+                                        <span class="fw-medium">{{ ck.name }}</span>
+                                    </div>
+                                </td>
+                                <td><span class="checkin-time">{{ ck.check_in_time.strftime('%I:%M %p') if ck.check_in_time else 'N/A' }}</span></td>
+                                <td>
+                                    <span class="badge bg-light text-dark" style="border-radius:6px;font-size:0.72rem;">
+                                        <i class="bi bi-qr-code me-1"></i>QR Scan
+                                    </span>
+                                </td>
+                                <td><span class="checkin-status in"><i class="bi bi-check-circle-fill me-1"></i>Checked In</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Charts + Export -->
+    <div class="col-lg-4">
+        <!-- Attendance Chart -->
+        <div class="card mb-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-pie-chart text-primary me-2"></i>Attendance Status</h6>
+                <canvas id="attendanceChart" style="max-height:250px;"></canvas>
+                <div class="d-flex justify-content-center gap-4 mt-3">
+                    <div class="text-center">
+                        <span class="d-block fw-bold" id="presentLabel" style="color:var(--success);">{{ checked_in }}</span>
+                        <small class="text-muted">Present</small>
+                    </div>
+                    <div class="text-center">
+                        <span class="d-block fw-bold" id="absentLabel" style="color:var(--warning);">{{ remaining }}</span>
+                        <small class="text-muted">Absent</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hourly Check-in Chart -->
+        <div class="card mb-4" data-aos="fade-up" data-aos-delay="140">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart text-primary me-2"></i>Check-in Timeline</h6>
+                <canvas id="hourlyChart" style="max-height:220px;"></canvas>
+            </div>
+        </div>
+
+        <!-- Export -->
+        <div class="card" data-aos="fade-up" data-aos-delay="180">
+            <div class="card-body p-4 text-center">
+                <i class="bi bi-file-earmark-spreadsheet" style="font-size:2.5rem;color:var(--primary);opacity:0.5;"></i>
+                <h6 class="fw-bold mt-2 mb-1">Export Report</h6>
+                <p class="text-muted mb-3" style="font-size:0.82rem;">Download attendance data as CSV</p>
+                <a href="{{ url_for('guests.attendance_report', event_id=event.id) }}" class="btn btn-gradient w-100">
+                    <i class="bi bi-download me-1"></i>Export CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Full Guest Check-in List -->
+<div class="card" data-aos="fade-up" data-aos-delay="100">
+    <div class="card-body p-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <h6 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Guest Check-in List</h6>
+            <div class="checkin-filters" id="checkinFilters">
+                <button class="ck-btn active" data-filter="all">All</button>
+                <button class="ck-btn" data-filter="checked-in">Checked In</button>
+                <button class="ck-btn" data-filter="not-checked-in">Not Checked In</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table checkin-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Time Checked In</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="checkinListBody">
+                    {% for g in guests %}
+                    <tr class="checkin-row" data-checkin="{{ 'checked-in' if g.checked_in else 'not-checked-in' }}" data-name="{{ g.name|lower }}">
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="ck-avatar" style="background:{{ 'linear-gradient(135deg,#10b981,#059669)' if g.checked_in else 'linear-gradient(135deg,#94a3b8,#64748b)' }}">{{ g.name[:2]|upper }}</div>
+                                <span class="fw-medium">{{ g.name }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if g.checked_in %}
+                            <span class="checkin-time">{{ g.check_in_time.strftime('%I:%M %p') if g.check_in_time else 'N/A' }}</span>
+                            {% else %}
+                            <span class="text-muted" style="font-size:0.82rem;">Not yet</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if g.checked_in %}
+                            <span class="checkin-status in"><i class="bi bi-check-circle-fill me-1"></i>Checked In</span>
+                            {% else %}
+                            <span class="checkin-status out"><i class="bi bi-clock me-1"></i>Awaiting</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not g.checked_in %}
+                            <button class="btn btn-sm btn-outline-success btn-checkin" data-guest-token="{{ g.qr_token }}" data-guest-name="{{ g.name }}" style="border-radius:6px;font-size:0.78rem;">
+                                <i class="bi bi-check-lg me-1"></i>Check In
+                            </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-light" style="border-radius:6px;font-size:0.78rem;" disabled>
+                                <i class="bi bi-check-all me-1"></i>Done
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size = 12;
+
+    // ── Attendance Doughnut ──
+    const attCtx = document.getElementById('attendanceChart');
+    let attChart = null;
+    if (attCtx) {
+        attChart = new Chart(attCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent'],
+                datasets: [{
+                    data: [{{ checked_in }}, {{ remaining }}],
+                    backgroundColor: ['#10b981', '#f59e0b'],
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // ── Hourly Bar Chart ──
+    const hourlyCtx = document.getElementById('hourlyChart');
+    if (hourlyCtx) {
+        new Chart(hourlyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['3 PM', '3:30', '4 PM', '4:30', '5 PM', '5:30'],
+                datasets: [{
+                    label: 'Check-ins',
+                    data: [0, 0, {{ checked_in }}, 0, 0, 0],
+                    backgroundColor: 'rgba(108,99,255,0.7)',
+                    borderRadius: 6,
+                    barThickness: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    }
+
+    // ── Check-in List Filters ──
+    const ckBtns = document.querySelectorAll('#checkinFilters .ck-btn');
+    const ckRows = document.querySelectorAll('.checkin-row');
+
+    ckBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            ckBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filter = btn.dataset.filter;
+            ckRows.forEach(row => {
+                row.style.display = (filter === 'all' || row.dataset.checkin === filter) ? '' : 'none';
+            });
+        });
+    });
+
+    // ── Event Selector Redirect ──
+    const eventSelect = document.getElementById('eventSelect');
+    if (eventSelect) {
+        eventSelect.addEventListener('change', (e) => {
+            const eventId = e.target.value;
+            if (eventId) {
+                window.location.href = `/guests/attendance/${eventId}`;
+            }
+        });
+    }
+
+    // ── Manual Search and Check-in ──
+    const manualInput = document.getElementById('manualSearch');
+    const resultsDiv = document.getElementById('manualSearchResults');
+    const allGuests = [
+        {% for g in guests %}
+        { name: '{{ g.name|replace("'", "\\'") }}', checkedIn: {{ 'true' if g.checked_in else 'false' }}, token: '{{ g.qr_token }}' }{{ ',' if not loop.last }}
+        {% endfor %}
+    ];
+
+    if (manualInput) {
+        manualInput.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            if (q.length < 2) {
+                resultsDiv.innerHTML = '<div class="text-center text-muted py-3" style="font-size:0.85rem;"><i class="bi bi-person-check me-1"></i>Type a guest name to find and check them in</div>';
+                return;
+            }
+            const matches = allGuests.filter(g => g.name.toLowerCase().includes(q));
+            if (matches.length === 0) {
+                resultsDiv.innerHTML = '<div class="text-center text-muted py-3" style="font-size:0.85rem;">No guests found</div>';
+                return;
+            }
+            let html = '';
+            matches.forEach(g => {
+                const initials = g.name.substring(0,2).toUpperCase();
+                const statusBadge = g.checkedIn
+                    ? '<span class="checkin-status in"><i class="bi bi-check-circle-fill me-1"></i>Already In</span>'
+                    : `<button class="btn btn-sm btn-outline-success btn-checkin" data-guest-token="${g.token}" data-guest-name="${g.name}"><i class="bi bi-check-lg me-1"></i>Check In</button>`;
+                html += `
+                    <div class="d-flex align-items-center justify-content-between py-2 border-bottom" style="border-color:#f1f5f9 !important;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="ck-avatar" style="background:var(--gradient-accent)">${initials}</div>
+                            <span class="fw-medium" style="font-size:0.85rem;">${g.name}</span>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                `;
+            });
+            resultsDiv.innerHTML = html;
+        });
+    }
+
+    // ── Handle AJAX manual checkin button click ──
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.btn-checkin');
+        if (!btn) return;
+        
+        const token = btn.dataset.guestToken;
+        const name = btn.dataset.guestName;
+        
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>`;
+        
+        try {
+            const result = await apiRequest(`/guests/checkin/${token}`, 'POST');
+            if (result.success) {
+                showToast(result.message, 'success');
+                setTimeout(() => window.location.reload(), 500);
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-check-lg me-1"></i>Check In`;
+        }
+    });
+
+    // ── Simulator (Start Camera / Scanning) ──
+    const startCameraBtn = document.getElementById('startCameraBtn');
+    const startScanBtn = document.getElementById('startScanBtn');
+    
+    function simulateScan() {
+        const awaitingGuests = allGuests.filter(g => !g.checkedIn);
+        if (awaitingGuests.length === 0) {
+            showToast('All guests are checked in!', 'info');
+            return;
+        }
+        
+        showToast('Scanning QR Code pass...', 'info');
+        
+        setTimeout(async () => {
+            const randomGuest = awaitingGuests[Math.floor(Math.random() * awaitingGuests.length)];
+            showToast(`QR Code Pass scanned for: ${randomGuest.name}`, 'success');
+            
+            try {
+                const result = await apiRequest(`/guests/checkin/${randomGuest.token}`, 'POST');
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    setTimeout(() => window.location.reload(), 500);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }, 1500);
+    }
+    
+    if (startCameraBtn) startCameraBtn.addEventListener('click', simulateScan);
+    if (startScanBtn) startScanBtn.addEventListener('click', simulateScan);
+
+    // ── Socket.IO Real-time updates ──
+    if (window.socket) {
+        window.socket.on('attendance_updated', function(data) {
+            console.log('[Socket.IO] Attendance updated:', data);
+            showToast(`${data.guest_name} has checked in!`, 'success');
+            
+            // Reload page to refresh chart, timeline, lists automatically and robustly
+            setTimeout(() => window.location.reload(), 1500);
+        });
+    }
+});
+</script>
+{% endblock %}

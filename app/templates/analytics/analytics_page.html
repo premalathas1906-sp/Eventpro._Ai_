@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Event Analytics{% endblock %}
+{% block nav_analytics %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kpi-row { margin-bottom: 24px; }
+    .chart-card-body { height: 280px; position: relative; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold mb-1">Event Analytics 📊</h2>
+            <p class="text-secondary mb-0">Event: <strong class="text-primary">{{ event.name }}</strong></p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select w-auto" onchange="location = this.value;">
+                {% for ev in events %}
+                <option value="{{ url_for('analytics.analytics_page', event_id=ev.id) }}" {% if ev.id == event.id %}selected{% endif %}>
+                    {{ ev.name }}
+                </option>
+                {% endfor %}
+            </select>
+            <a href="{{ url_for('guests.attendance_report', event_id=event.id) }}" class="btn btn-outline-primary">
+                <i class="bi bi-download"></i> Export Attendance
+            </a>
+        </div>
+    </div>
+
+    <!-- Analytics KPIs -->
+    <div class="row kpi-row g-3">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card shadow-sm border-0 stat-card--primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-uppercase text-muted small fw-semibold">Attendance Rate</span>
+                            <h3 class="mb-0 fw-bold mt-1">{{ stats.attendance_rate }}%</h3>
+                        </div>
+                        <div class="stat-icon-container"><i class="bi bi-qr-code-scan"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card shadow-sm border-0 stat-card--success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-uppercase text-muted small fw-semibold">Budget Used</span>
+                            <h3 class="mb-0 fw-bold mt-1">{{ stats.budget_used_percent }}%</h3>
+                        </div>
+                        <div class="stat-icon-container"><i class="bi bi-currency-rupee"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card shadow-sm border-0 stat-card--warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-uppercase text-muted small fw-semibold">Tasks Completed</span>
+                            <h3 class="mb-0 fw-bold mt-1">{{ stats.task_completion_percent }}%</h3>
+                        </div>
+                        <div class="stat-icon-container"><i class="bi bi-check-circle"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card stat-card shadow-sm border-0 stat-card--info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-uppercase text-muted small fw-semibold">Guest Satisfaction</span>
+                            <h3 class="mb-0 fw-bold mt-1">{{ stats.satisfaction_rating }} / 5</h3>
+                        </div>
+                        <div class="stat-icon-container"><i class="bi bi-star"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Grid (2x2) -->
+    <div class="row g-4">
+        <!-- Attendance Breakdown -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h6 class="fw-bold mb-0">Guest RSVP Status</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="chart-card-body">
+                        <canvas id="rsvpChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Checked In vs Absent -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h6 class="fw-bold mb-0">Live Check-in Overview</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="chart-card-body">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Allocated vs Spent -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h6 class="fw-bold mb-0">Budget Breakdown (Allocated vs Spent)</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="chart-card-body">
+                        <canvas id="budgetBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback Sentiment -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h6 class="fw-bold mb-0">Feedback Sentiment Analysis</h6>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="chart-card-body">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const eventId = {{ event.id }};
+    
+    // Fetch and render Attendance/RSVP data
+    fetch(`/analytics/api/attendance/${eventId}`)
+        .then(res => res.json())
+        .then(data => {
+            // RSVP Pie
+            const rsvpCtx = document.getElementById('rsvpChart').getContext('2d');
+            new Chart(rsvpCtx, {
+                type: 'pie',
+                data: {
+                    labels: data.rsvp.labels,
+                    datasets: [{
+                        data: data.rsvp.data,
+                        backgroundColor: ['#6c63ff', '#3b82f6', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+            
+            // Live Check-in Doughnut
+            const attendCtx = document.getElementById('attendanceChart').getContext('2d');
+            new Chart(attendCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.attendance.labels,
+                    datasets: [{
+                        data: data.attendance.data,
+                        backgroundColor: ['#10b981', '#f59e0b', '#cbd5e1'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '70%'
+                }
+            });
+        });
+        
+    // Fetch and render Budget data
+    fetch(`/analytics/api/budget/${eventId}`)
+        .then(res => res.json())
+        .then(data => {
+            const budgetCtx = document.getElementById('budgetBreakdownChart').getContext('2d');
+            new Chart(budgetCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Allocated',
+                            data: data.allocated,
+                            backgroundColor: '#6c63ff',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Spent',
+                            data: data.spent,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        });
+        
+    // Fetch and render Sentiment data
+    fetch(`/analytics/api/feedback/${eventId}`)
+        .then(res => res.json())
+        .then(data => {
+            const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+            new Chart(sentimentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.sentiment.labels,
+                    datasets: [{
+                        data: data.sentiment.data,
+                        backgroundColor: ['#10b981', '#cbd5e1', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '65%'
+                }
+            });
+        });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Flask instance folder (contains DB and secret keys)
+instance/
+.webassets-cache
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Temporary and local agent files
+.gemini/
+.agents/

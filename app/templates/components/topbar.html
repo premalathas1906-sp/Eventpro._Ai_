@@ -1,0 +1,168 @@
+<!-- Topbar -->
+<header class="topbar">
+    <!-- Left: Mobile toggle + Page title -->
+    <div class="topbar-left">
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation">
+            <i class="bi bi-list"></i>
+        </button>
+        <div>
+            <h1 class="topbar-title">{% block topbar_title %}Dashboard{% endblock %}</h1>
+        </div>
+    </div>
+
+    <!-- Center: Search -->
+    <div class="topbar-search d-none d-lg-block">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" placeholder="Search events, guests, tasks..." aria-label="Search">
+    </div>
+
+    <!-- Right: Actions -->
+    <div class="topbar-right">
+        <!-- Search toggle (mobile) -->
+        <button class="topbar-icon-btn d-lg-none" aria-label="Search">
+            <i class="bi bi-search"></i>
+        </button>
+
+        <!-- Notifications -->
+        <button class="topbar-icon-btn notification-bell" aria-label="Notifications" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-bell"></i>
+            {% if notification_count > 0 %}
+            <span class="badge-counter" id="notificationCounter">{{ notification_count }}</span>
+            {% endif %}
+        </button>
+        <div class="dropdown-menu dropdown-menu-end" style="width: 320px;">
+            <div class="px-3 py-2 d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold">Notifications</h6>
+                {% if notification_count > 0 %}
+                <a href="#" class="text-primary" style="font-size: 0.8rem;" id="markAllReadBtn" onclick="markAllNotificationsRead(event)">Mark all read</a>
+                {% endif %}
+            </div>
+            <div class="dropdown-divider"></div>
+            <div id="notificationsContainer" style="max-height: 280px; overflow-y: auto;">
+            {% for notification in notifications %}
+            <a class="dropdown-item py-3 {% if not notification.is_read %}bg-light{% endif %}" href="#" onclick="markNotificationRead(event, {{ notification.id }})">
+                <div class="d-flex gap-3">
+                    <div class="avatar avatar-sm {% if notification.is_read %}opacity-75{% endif %}" style="background: var(--primary-light); color: var(--primary);">
+                        <i class="bi bi-bell" style="font-size: 0.8rem;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold text-dark" style="font-size: 0.825rem;">{{ notification.title }}</div>
+                        <div class="text-secondary" style="font-size: 0.75rem;">{{ notification.message }}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">{{ notification.created_at.strftime('%b %d, %H:%M') }}</div>
+                    </div>
+                </div>
+            </a>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <div style="font-size:1.8rem;"><i class="bi bi-bell-slash"></i></div>
+                <p class="small mb-0">No notifications</p>
+            </div>
+            {% endfor %}
+            </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="vr mx-2 d-none d-lg-block" style="height: 24px; opacity: 0.15;"></div>
+
+        <!-- User Dropdown -->
+        <div class="dropdown">
+            <button class="user-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="avatar">
+                    {% if current_user and current_user.is_authenticated %}
+                        {{ current_user.username[0]|upper if current_user.username else 'U' }}
+                    {% else %}
+                        U
+                    {% endif %}
+                </div>
+                <span class="user-dropdown-name d-none d-lg-inline">
+                    {% if current_user and current_user.is_authenticated %}
+                        {{ current_user.username or 'User' }}
+                    {% else %}
+                        Guest
+                    {% endif %}
+                </span>
+                <i class="bi bi-chevron-down d-none d-lg-inline" style="font-size: 0.75rem; color: var(--text-muted);"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <div class="px-3 py-2">
+                        <div class="fw-bold" style="font-size: 0.9rem;">
+                            {% if current_user and current_user.is_authenticated %}
+                                {{ current_user.username or 'User' }}
+                            {% else %}
+                                Guest
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            {% if current_user and current_user.is_authenticated %}
+                                {{ current_user.email or '' }}
+                            {% endif %}
+                        </div>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="#">
+                        <i class="bi bi-person"></i> My Profile
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#">
+                        <i class="bi bi-question-circle"></i> Help Center
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+    function markNotificationRead(event, id) {
+        event.preventDefault();
+        fetch(`/notifications/mark-read/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            }
+        })
+        .catch(err => console.error(err));
+    }
+
+    function markAllNotificationsRead(event) {
+        event.preventDefault();
+        fetch('/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            }
+        })
+        .catch(err => console.error(err));
+    }
+    </script>
+</header>
