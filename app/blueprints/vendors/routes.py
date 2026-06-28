@@ -27,7 +27,7 @@ def vendor_list():
     # Categories for filters/options
     categories = ['Catering', 'Decoration', 'Photography', 'Music', 'Venue', 'General']
     
-    return render_template('vendor_list.html', event=event, events=events, vendors=vendors, categories=categories)
+    return render_template('vendors/vendor_list.html', event=event, events=events, vendors=vendors, categories=categories)
 
 @vendors_bp.route('/add/<int:event_id>', methods=['POST'])
 @login_required

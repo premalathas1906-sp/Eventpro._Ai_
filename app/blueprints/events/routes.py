@@ -77,7 +77,7 @@ def dashboard():
             'progress': progress
         })
         
-    return render_template('dashboard.html', stats=stats, upcoming_events=enriched_upcoming)
+    return render_template('events/dashboard.html', stats=stats, upcoming_events=enriched_upcoming)
 
 @events_bp.route('/events')
 @login_required
@@ -113,7 +113,7 @@ def events_list():
             'progress': progress
         })
         
-    return render_template('events_list.html', events=formatted_events)
+    return render_template('events/events_list.html', events=formatted_events)
 
 @events_bp.route('/events/create', methods=['POST'])
 @login_required
@@ -268,7 +268,7 @@ def event_detail(id):
         'spent_budget': sum(b.spent_amount for b in budget_items),
     }
     
-    return render_template('event_detail.html', event=event, guests=guests, tasks=tasks, vendors=vendors, budget_items=budget_items, feedback_items=feedback_items, stats=stats, now=datetime.utcnow())
+    return render_template('events/event_detail.html', event=event, guests=guests, tasks=tasks, vendors=vendors, budget_items=budget_items, feedback_items=feedback_items, stats=stats, now=datetime.utcnow())
 
 @events_bp.route('/events/<int:id>/update', methods=['POST'])
 @login_required

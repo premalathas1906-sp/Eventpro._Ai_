@@ -18,7 +18,7 @@ def login():
         user = User.query.filter((User.email == email) | (User.username == email)).first()
         if user is None or not user.check_password(password):
             flash('Invalid username/email or password', 'danger')
-            return render_template('login.html')
+            return render_template('auth/login.html')
         
         login_user(user, remember=remember)
         next_page = request.args.get('next')
@@ -26,7 +26,7 @@ def login():
             next_page = url_for('events.dashboard')
         return redirect(next_page)
         
-    return render_template('login.html')
+    return render_template('auth/login.html')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -41,19 +41,19 @@ def register():
         
         if not username or not email or not password:
             flash('All fields are required', 'danger')
-            return render_template('register.html')
+            return render_template('auth/register.html')
             
         if password != confirm_password:
             flash('Passwords do not match', 'danger')
-            return render_template('register.html')
+            return render_template('auth/register.html')
             
         if User.query.filter_by(username=username).first():
             flash('Username is already taken', 'danger')
-            return render_template('register.html')
+            return render_template('auth/register.html')
             
         if User.query.filter_by(email=email).first():
             flash('Email is already registered', 'danger')
-            return render_template('register.html')
+            return render_template('auth/register.html')
             
         user = User(username=username, email=email)
         user.set_password(password)
@@ -63,7 +63,7 @@ def register():
         flash('Registration successful! Please sign in.', 'success')
         return redirect(url_for('auth.login'))
         
-    return render_template('register.html')
+    return render_template('auth/register.html')
 
 @auth_bp.route('/logout')
 @login_required
@@ -90,4 +90,4 @@ def forgot_password():
         else:
             flash('Username or Email address not found.', 'danger')
             
-    return render_template('forgot_password.html')
+    return render_template('auth/forgot_password.html')

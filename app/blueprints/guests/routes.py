@@ -30,7 +30,7 @@ def guest_list_all():
                 'event_name': current_event.name,
                 'qr_token': g.qr_token
             })
-    return render_template('guest_list.html', guests=guests, events=events, current_event_id=current_event_id, current_event=current_event)
+    return render_template('guests/guest_list.html', guests=guests, events=events, current_event_id=current_event_id, current_event=current_event)
 
 @guests_bp.route('/event/<int:event_id>')
 @login_required
@@ -54,7 +54,7 @@ def guest_list_event(event_id):
         })
         
     events = current_user.events.all()
-    return render_template('guest_list.html', guests=guests, events=events, current_event_id=event_id, current_event=event)
+    return render_template('guests/guest_list.html', guests=guests, events=events, current_event_id=event_id, current_event=event)
 
 @guests_bp.route('/add/<int:event_id>', methods=['POST'])
 @login_required
@@ -194,7 +194,7 @@ def checkin_guest(token):
         })
         
     # Standard browser visit - show a digital pass ticket page
-    return render_template('digital_pass.html', guest=guest, event=event)
+    return render_template('guests/digital_pass.html', guest=guest, event=event)
 
 
 @guests_bp.route('/attendance')
@@ -223,7 +223,7 @@ def attendance_event(event_id):
     
     recent_check_ins = event.guests.filter_by(checked_in=True).order_by(Guest.check_in_time.desc()).limit(10).all()
     
-    return render_template('attendance_dashboard.html', 
+    return render_template('guests/attendance_dashboard.html', 
                            event=event, 
                            guests=guests, 
                            events=events,

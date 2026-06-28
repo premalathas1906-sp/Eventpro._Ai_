@@ -60,13 +60,13 @@ def feedback_page():
     words_summary = sentiment_engine.analyze_batch(feedbacks_text)
     common_themes = words_summary.get('common_themes', [])
     
-    return render_template('feedback_page.html', event=event, events=events, feedback=feedback_items, stats=stats, common_themes=common_themes)
+    return render_template('feedback/feedback_page.html', event=event, events=events, feedback=feedback_items, stats=stats, common_themes=common_themes)
 
 @feedback_bp.route('/form/<int:event_id>')
 def feedback_form(event_id):
     # Public route - no login required
     event = Event.query.get_or_404(event_id)
-    return render_template('feedback_form.html', event=event)
+    return render_template('feedback/feedback_form.html', event=event)
 
 @feedback_bp.route('/submit/<int:event_id>', methods=['POST'])
 def submit_feedback(event_id):
@@ -99,7 +99,7 @@ def submit_feedback(event_id):
             return jsonify({'success': True, 'message': 'Thank you for your feedback!'})
             
         flash('Thank you for your feedback!', 'success')
-        return render_template('feedback_success.html', event=event)
+        return render_template('feedback/feedback_success.html', event=event)
     except Exception as e:
         db.session.rollback()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('ajax') == 'true':

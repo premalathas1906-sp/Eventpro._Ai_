@@ -43,7 +43,7 @@ def budget_page():
     # Get recommendations
     recs = budget_engine.get_recommendations(event.budget, event.event_type, event.guests.count() or event.guest_count)
     
-    return render_template('budget_page.html', event=event, events=events, budget_items=budget_items, stats=stats, recommendations=recs['recommendations'], venues=recs['venues'])
+    return render_template('budget/budget_page.html', event=event, events=events, budget_items=budget_items, stats=stats, recommendations=recs['recommendations'], venues=recs['venues'])
 
 @budget_bp.route('/recommend', methods=['POST'])
 @login_required

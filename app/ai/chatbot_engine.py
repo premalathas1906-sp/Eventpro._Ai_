@@ -10,8 +10,8 @@ import re
 import string
 from datetime import datetime, timedelta
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+import math
+from collections import Counter
 
 
 class ChatbotEngine:
@@ -171,7 +171,6 @@ class ChatbotEngine:
             },
         }
 
-        self.vectorizer = TfidfVectorizer()
         self._train()
 
     # ── Training ────────────────────────────────────────────────────────
@@ -185,7 +184,44 @@ class ChatbotEngine:
                 self._patterns.append(self._preprocess(pattern))
                 self._labels.append(intent_name)
 
-        self._tfidf_matrix = self.vectorizer.fit_transform(self._patterns)
+        # Preprocess and tokenize all corpus documents
+        self.doc_tokens = [self._tokenize(doc) for doc in self._patterns]
+        # Build vocabulary
+        self.vocab = list(set(word for doc in self.doc_tokens for word in doc))
+        # Compute document frequencies
+        df = Counter()
+        for doc in self.doc_tokens:
+            for word in set(doc):
+                df[word] += 1
+        # Compute IDFs
+        N = len(self._patterns)
+        self.idf = {word: math.log((1 + N) / (1 + df[word])) + 1 for word in self.vocab}
+        # Compute TF-IDF vectors for all corpus documents
+        self._tfidf_matrix = [self._get_tfidf(doc) for doc in self.doc_tokens]
+
+    def _tokenize(self, text: str) -> list[str]:
+        return text.lower().translate(str.maketrans("", "", string.punctuation)).split()
+
+    def _get_tf(self, tokens: list[str]) -> dict:
+        counts = Counter(tokens)
+        length = len(tokens) or 1
+        return {word: count / length for word, count in counts.items()}
+
+    def _get_tfidf(self, tokens: list[str]) -> list[float]:
+        tf = self._get_tf(tokens)
+        vector = []
+        for word in self.vocab:
+            val = tf.get(word, 0) * self.idf.get(word, 0)
+            vector.append(val)
+        return vector
+
+    def _cosine_similarity(self, v1: list[float], v2: list[float]) -> float:
+        dot_product = sum(a * b for a, b in zip(v1, v2))
+        norm_a = math.sqrt(sum(a * a for a in v1))
+        norm_b = math.sqrt(sum(b * b for b in v2))
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot_product / (norm_a * norm_b)
 
     # ── Preprocessing ───────────────────────────────────────────────────
     @staticmethod
@@ -199,15 +235,24 @@ class ChatbotEngine:
     # ── Intent Classification ───────────────────────────────────────────
     def _classify(self, text: str) -> tuple[str, float]:
         """Return (intent_name, confidence) for the preprocessed *text*."""
-        vec = self.vectorizer.transform([self._preprocess(text)])
-        similarities = cosine_similarity(vec, self._tfidf_matrix).flatten()
-        best_idx = similarities.argmax()
-        confidence = float(similarities[best_idx])
-
-        if confidence < self.CONFIDENCE_THRESHOLD:
-            return "fallback", confidence
-
-        return self._labels[best_idx], confidence
+        tokens = self._tokenize(text)
+        if not tokens:
+            return "fallback", 0.0
+        vec = self._get_tfidf(tokens)
+        
+        best_score = 0.0
+        best_label = "fallback"
+        
+        for score_idx, doc_vec in enumerate(self._tfidf_matrix):
+            sim = self._cosine_similarity(vec, doc_vec)
+            if sim > best_score:
+                best_score = sim
+                best_label = self._labels[score_idx]
+                
+        if best_score < self.CONFIDENCE_THRESHOLD:
+            return "fallback", best_score
+            
+        return best_label, best_score
 
     # ── Entity Extraction ───────────────────────────────────────────────
     @staticmethod

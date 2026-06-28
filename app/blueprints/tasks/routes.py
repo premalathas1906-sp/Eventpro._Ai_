@@ -30,7 +30,7 @@ def task_board():
     inprogress_tasks = [t for t in tasks if t.status == 'In Progress']
     completed_tasks = [t for t in tasks if t.status == 'Completed']
     
-    return render_template('task_board.html', 
+    return render_template('tasks/task_board.html', 
                            event=event, 
                            events=events, 
                            todo=todo_tasks, 

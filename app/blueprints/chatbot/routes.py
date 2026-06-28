@@ -9,7 +9,7 @@ chatbot_engine = ChatbotEngine()
 @chatbot_bp.route('/chatbot')
 @login_required
 def chat():
-    return render_template('chat.html')
+    return render_template('chatbot/chat.html')
 
 @chatbot_bp.route('/api/chatbot', methods=['POST'])
 @login_required

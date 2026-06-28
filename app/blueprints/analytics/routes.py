@@ -46,7 +46,7 @@ def analytics_page():
         'satisfaction_rating': avg_rating
     }
     
-    return render_template('analytics_page.html', event=event, events=events, stats=stats)
+    return render_template('analytics/analytics_page.html', event=event, events=events, stats=stats)
 
 @analytics_bp.route('/api/attendance/<int:event_id>')
 @login_required
