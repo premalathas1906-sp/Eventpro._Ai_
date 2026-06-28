@@ -12,6 +12,17 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     migrate.init_app(app)
     csrf.init_app(app)
+    
+    # Enable CORS for the frontend URL
+    from flask_cors import CORS
+    frontend_url = os.environ.get('FRONTEND_URL', '').strip()
+    origins = ["http://localhost:5000", "http://127.0.0.1:5000"]
+    if frontend_url:
+        origins.append(frontend_url)
+        if frontend_url.endswith('/'):
+            origins.append(frontend_url[:-1])
+    CORS(app, resources={r"/*": {"origins": origins}}, supports_credentials=True)
+
     socketio.init_app(app, cors_allowed_origins="*")
 
     # SocketIO Rooms Connection Logic
@@ -57,22 +68,31 @@ def create_app(config_class=Config):
     app.register_blueprint(analytics_bp, url_prefix='/analytics')
     app.register_blueprint(feedback_bp, url_prefix='/feedback')
 
-    # Register context processor for notifications
+    # Register context processor for notifications and global variables
     @app.context_processor
-    def inject_notifications():
+    def inject_global_vars():
         from flask_login import current_user
         from app.models.reminder import Reminder
-        if current_user.is_authenticated:
-            reminders = Reminder.query.filter_by(user_id=current_user.id).order_by(Reminder.created_at.desc()).limit(5).all()
-            unread_count = Reminder.query.filter_by(user_id=current_user.id, is_read=False).count()
-            return {
-                'notifications': reminders,
-                'notification_count': unread_count
-            }
-        return {
+        
+        backend_url = os.environ.get('BACKEND_URL', '')
+        if backend_url.endswith('/'):
+            backend_url = backend_url[:-1]
+            
+        ctx = {
+            'backend_url': backend_url,
             'notifications': [],
             'notification_count': 0
         }
+        
+        if current_user.is_authenticated:
+            try:
+                reminders = Reminder.query.filter_by(user_id=current_user.id).order_by(Reminder.created_at.desc()).limit(5).all()
+                unread_count = Reminder.query.filter_by(user_id=current_user.id, is_read=False).count()
+                ctx['notifications'] = reminders
+                ctx['notification_count'] = unread_count
+            except Exception:
+                pass
+        return ctx
 
     # Create database and seed demo data on first start
     with app.app_context():

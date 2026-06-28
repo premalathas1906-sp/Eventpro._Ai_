@@ -71,9 +71,24 @@
     {% if current_user and current_user.is_authenticated %}
     <script src="{{ url_for('static', filename='js/chatbot_widget.js') }}"></script>
     <script>
-        window.socket = io({transports: ['websocket']});
+        // Setup API interceptor and Socket.IO configurations for multi-host production setups
+        const apiBase = "{{ backend_url }}";
+        if (apiBase) {
+            const originalFetch = window.fetch;
+            window.fetch = function(input, init) {
+                let url = input;
+                if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) {
+                    url = apiBase + url;
+                }
+                return originalFetch(url, init);
+            };
+        }
+
+        window.socket = io(apiBase || window.location.origin, {
+            transports: ['websocket', 'polling']
+        });
         window.socket.on('connect', () => {
-            console.log('[Socket.IO] Connected successfully.');
+            console.log('[Socket.IO] Connected successfully to:', apiBase || window.location.origin);
         });
     </script>
     {% endif %}
