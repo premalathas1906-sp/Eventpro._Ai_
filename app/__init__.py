@@ -7,6 +7,19 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Set default fallbacks if not provided in Config
+    if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+        if 'VERCEL' in os.environ:
+            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/site.db'
+        else:
+            app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+
+    if not app.config.get('UPLOAD_FOLDER'):
+        if 'VERCEL' in os.environ:
+            app.config['UPLOAD_FOLDER'] = '/tmp'
+        else:
+            app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
