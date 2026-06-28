@@ -12,7 +12,7 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     migrate.init_app(app)
     csrf.init_app(app)
-    socketio.init_app(app)
+    socketio.init_app(app, cors_allowed_origins="*")
 
     # SocketIO Rooms Connection Logic
     from flask_socketio import join_room, leave_room
